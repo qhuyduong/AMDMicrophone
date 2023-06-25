@@ -3,7 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>IOKitPersonalities</key>
-	<dict/>
+	<dict>
+		<key>AMDMicrophone</key>
+		<dict>
+			<key>IOClass</key>
+			<string>$(PRODUCT_NAME)</string>
+			<key>IOMatchCategory</key>
+			<string>$(PRODUCT_NAME)</string>
+			<key>IOProviderClass</key>
+			<string>IOResources</string>
+		</dict>
+	</dict>
 	<key>OSBundleLibraries</key>
 	<dict/>
 </dict>
