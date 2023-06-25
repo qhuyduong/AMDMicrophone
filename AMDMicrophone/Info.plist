@@ -15,6 +15,11 @@
 		</dict>
 	</dict>
 	<key>OSBundleLibraries</key>
-	<dict/>
+	<dict>
+		<key>com.apple.kpi.iokit</key>
+		<string>13.0</string>
+		<key>com.apple.kpi.libkern</key>
+		<string>13.0</string>
+	</dict>
 </dict>
 </plist>
