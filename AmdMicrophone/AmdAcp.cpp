@@ -11,12 +11,25 @@ OSDefineMetaClassAndStructors(AmdAcp, IOService);
 
 bool AmdAcp::start(IOService* provider)
 {
-    IOLog("Hello, world\n");
+    LOG("Hello, world\n");
+
+    this->pciDev = OSDynamicCast(IOPCIDevice, provider);
+    if (this->pciDev == NULL) {
+        return false;
+    }
+
+    UInt8 revisionId = this->pciDev->configRead8(kIOPCIConfigRevisionID);
+
+    if (revisionId == 0x01) {
+        LOG("Renoir detected!\n");
+    } else {
+        LOG("Only Renoir is supported!\n");
+    }
 
     return true;
 }
 
 void AmdAcp::stop(IOService* provider)
 {
-    IOLog("Bye, world\n");
+    LOG("Bye, world!\n");
 }

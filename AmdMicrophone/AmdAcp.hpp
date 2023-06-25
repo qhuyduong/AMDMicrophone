@@ -10,9 +10,15 @@
 
 #include <IOKit/IOLib.h>
 #include <IOKit/IOService.h>
+#include <IOKit/pci/IOPCIDevice.h>
+
+#define LOG(...) IOLog("%s: " __VA_ARGS__, this->getName())
 
 class AmdAcp : public IOService {
     OSDeclareDefaultStructors(AmdAcp);
+
+private:
+    IOPCIDevice* pciDev;
 
 public:
     virtual bool start(IOService* provider) override;
