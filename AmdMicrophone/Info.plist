@@ -4,22 +4,24 @@
 <dict>
 	<key>IOKitPersonalities</key>
 	<dict>
-		<key>AMDMicrophone</key>
+		<key>AmdAcp</key>
 		<dict>
 			<key>IOClass</key>
-			<string>$(PRODUCT_NAME)</string>
-			<key>IOMatchCategory</key>
-			<string>$(PRODUCT_NAME)</string>
+			<string>AmdAcp</string>
+			<key>IOPCIMatch</key>
+			<string>0x102215E2</string>
 			<key>IOProviderClass</key>
-			<string>IOResources</string>
+			<string>IOProviderClass</string>
 		</dict>
 	</dict>
 	<key>OSBundleLibraries</key>
 	<dict>
+		<key>com.apple.iokit.IOPCIFamily</key>
+		<string>2.7</string>
 		<key>com.apple.kpi.iokit</key>
-		<string>13.0</string>
+		<string>12.0.0</string>
 		<key>com.apple.kpi.libkern</key>
-		<string>13.0</string>
+		<string>12.0.0</string>
 	</dict>
 </dict>
 </plist>
