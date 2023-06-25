@@ -8,6 +8,4 @@
 #ifndef AMDMicrophone_hpp
 #define AMDMicrophone_hpp
 
-#include <stdio.h>
-
 #endif /* AMDMicrophone_hpp */
