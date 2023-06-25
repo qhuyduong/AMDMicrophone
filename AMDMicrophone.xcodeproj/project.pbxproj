@@ -7,11 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		59C7D53E2A48428E0021BF53 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 59C7D53D2A48428E0021BF53 /* libkmod.a */; };
 		59DC4C1B2A48415200635CAB /* AMDMicrophone.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 59DC4C1A2A48415200635CAB /* AMDMicrophone.hpp */; };
 		59DC4C1D2A48415200635CAB /* AMDMicrophone.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 59DC4C1C2A48415200635CAB /* AMDMicrophone.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		59C7D53D2A48428E0021BF53 /* libkmod.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libkmod.a; path = usr/lib/libkmod.a; sourceTree = SDKROOT; };
 		59DC4C172A48415200635CAB /* AMDMicrophone.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AMDMicrophone.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		59DC4C1A2A48415200635CAB /* AMDMicrophone.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = AMDMicrophone.hpp; sourceTree = "<group>"; };
 		59DC4C1C2A48415200635CAB /* AMDMicrophone.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = AMDMicrophone.cpp; sourceTree = "<group>"; };
@@ -23,17 +25,27 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				59C7D53E2A48428E0021BF53 /* libkmod.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		59C7D53C2A48428E0021BF53 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				59C7D53D2A48428E0021BF53 /* libkmod.a */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		59DC4C0D2A48415200635CAB = {
 			isa = PBXGroup;
 			children = (
 				59DC4C192A48415200635CAB /* AMDMicrophone */,
 				59DC4C182A48415200635CAB /* Products */,
+				59C7D53C2A48428E0021BF53 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -262,6 +274,7 @@
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				KERNEL_EXTENSION_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
 				KERNEL_FRAMEWORK_HEADERS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
+				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/x86_64";
 				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				MARKETING_VERSION = 1.0;
 				MODULE_NAME = com.qhuyduong.AMDMicrophone;
@@ -286,6 +299,7 @@
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				KERNEL_EXTENSION_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
 				KERNEL_FRAMEWORK_HEADERS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
+				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/x86_64";
 				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				MARKETING_VERSION = 1.0;
 				MODULE_NAME = com.qhuyduong.AMDMicrophone;
