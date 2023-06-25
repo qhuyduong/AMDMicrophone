@@ -6,12 +6,16 @@
 	<dict>
 		<key>AmdAcp</key>
 		<dict>
+			<key>CFBundleIdentifier</key>
+			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 			<key>IOClass</key>
 			<string>AmdAcp</string>
+			<key>IOMatchCategory</key>
+			<string>IODefaultMatchCategory</string>
 			<key>IOPCIMatch</key>
-			<string>0x102215E2</string>
+			<string>0x15e21022</string>
 			<key>IOProviderClass</key>
-			<string>IOProviderClass</string>
+			<string>IOPCIDevice</string>
 		</dict>
 	</dict>
 	<key>OSBundleLibraries</key>

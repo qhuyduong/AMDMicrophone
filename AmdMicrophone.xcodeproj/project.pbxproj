@@ -95,7 +95,7 @@
 			dependencies = (
 			);
 			name = AmdMicrophone;
-			productName = AMDMicrophone;
+			productName = AmdMicrophone;
 			productReference = 59DC4C172A48415200635CAB /* AmdMicrophone.kext */;
 			productType = "com.apple.product-type.kernel-extension";
 		};
@@ -272,16 +272,16 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1.0.0d1;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = AMDMicrophone/Info.plist;
+				INFOPLIST_FILE = AmdMicrophone/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				KERNEL_EXTENSION_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
 				KERNEL_FRAMEWORK_HEADERS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/x86_64";
 				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				MARKETING_VERSION = 1.0;
-				MODULE_NAME = com.qhuyduong.AMDMicrophone;
+				MODULE_NAME = com.qhuyduong.AmdMicrophone;
 				MODULE_VERSION = 1.0.0d1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.qhuyduong.AMDMicrophone;
+				PRODUCT_BUNDLE_IDENTIFIER = com.qhuyduong.AmdMicrophone;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RUN_CLANG_STATIC_ANALYZER = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -297,16 +297,16 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1.0.0d1;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = AMDMicrophone/Info.plist;
+				INFOPLIST_FILE = AmdMicrophone/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				KERNEL_EXTENSION_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
 				KERNEL_FRAMEWORK_HEADERS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
 				LIBRARY_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Library/x86_64";
 				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				MARKETING_VERSION = 1.0;
-				MODULE_NAME = com.qhuyduong.AMDMicrophone;
+				MODULE_NAME = com.qhuyduong.AmdMicrophone;
 				MODULE_VERSION = 1.0.0d1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.qhuyduong.AMDMicrophone;
+				PRODUCT_BUNDLE_IDENTIFIER = com.qhuyduong.AmdMicrophone;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RUN_CLANG_STATIC_ANALYZER = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
