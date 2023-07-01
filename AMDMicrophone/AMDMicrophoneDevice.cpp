@@ -16,7 +16,6 @@ bool AMDMicrophoneDevice::createAudioEngine()
 {
     bool result = false;
     AMDMicrophoneEngine* audioEngine = NULL;
-    IOAudioControl* control;
 
     LOG("createAudioEngine()\n");
 
