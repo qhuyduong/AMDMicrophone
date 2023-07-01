@@ -17,8 +17,7 @@ class AMDMicrophoneEngine : public IOAudioEngine {
     OSDeclareDefaultStructors(AMDMicrophoneEngine);
 
     IOFilterInterruptEventSource* interruptEventSource;
-    SInt16* outputBuffer;
-    SInt16* inputBuffer;
+    SInt16* buffer;
 
     IOAudioStream* createNewAudioStream(IOAudioStreamDirection direction, void* sampleBuffer, UInt32 sampleBufferSize);
 
