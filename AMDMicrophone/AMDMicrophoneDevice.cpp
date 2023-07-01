@@ -101,6 +101,53 @@ Done:
     return result;
 }
 
+IOReturn AMDMicrophoneDevice::gainChangeHandler(IOService* target, IOAudioControl* gainControl, SInt32 oldValue, SInt32 newValue)
+{
+    IOReturn result = kIOReturnBadArgument;
+    AMDMicrophoneDevice* audioDevice;
+
+    audioDevice = (AMDMicrophoneDevice*)target;
+    if (audioDevice) {
+        result = audioDevice->gainChanged(gainControl, oldValue, newValue);
+    }
+
+    return result;
+}
+
+IOReturn AMDMicrophoneDevice::gainChanged(IOAudioControl* gainControl, SInt32 oldValue, SInt32 newValue)
+{
+    LOG("gainChanged(%d, %d)\n", oldValue, newValue);
+
+    if (gainControl) {
+        LOG("\t-> Channel %d\n", gainControl->getChannelID());
+    }
+
+    // Add hardware gain change code here
+    return kIOReturnSuccess;
+}
+
+IOReturn AMDMicrophoneDevice::inputMuteChangeHandler(IOService* target, IOAudioControl* muteControl, SInt32 oldValue, SInt32 newValue)
+{
+    IOReturn result = kIOReturnBadArgument;
+    AMDMicrophoneDevice* audioDevice;
+
+    audioDevice = (AMDMicrophoneDevice*)target;
+    if (audioDevice) {
+        result = audioDevice->inputMuteChanged(muteControl, oldValue, newValue);
+    }
+
+    return result;
+}
+
+IOReturn AMDMicrophoneDevice::inputMuteChanged(IOAudioControl* muteControl, SInt32 oldValue, SInt32 newValue)
+{
+    LOG("inputMuteChanged(%d, %d)\n", oldValue, newValue);
+
+    // Add input mute change code here
+
+    return kIOReturnSuccess;
+}
+
 IOService* AMDMicrophoneDevice::probe(IOService* provider, SInt32* score)
 {
     pciDevice = OSDynamicCast(IOPCIDevice, provider);
@@ -161,51 +208,4 @@ void AMDMicrophoneDevice::free()
     }
 
     super::free();
-}
-
-IOReturn AMDMicrophoneDevice::gainChangeHandler(IOService* target, IOAudioControl* gainControl, SInt32 oldValue, SInt32 newValue)
-{
-    IOReturn result = kIOReturnBadArgument;
-    AMDMicrophoneDevice* audioDevice;
-
-    audioDevice = (AMDMicrophoneDevice*)target;
-    if (audioDevice) {
-        result = audioDevice->gainChanged(gainControl, oldValue, newValue);
-    }
-
-    return result;
-}
-
-IOReturn AMDMicrophoneDevice::gainChanged(IOAudioControl* gainControl, SInt32 oldValue, SInt32 newValue)
-{
-    LOG("gainChanged(%d, %d)\n", oldValue, newValue);
-
-    if (gainControl) {
-        LOG("\t-> Channel %d\n", gainControl->getChannelID());
-    }
-
-    // Add hardware gain change code here
-    return kIOReturnSuccess;
-}
-
-IOReturn AMDMicrophoneDevice::inputMuteChangeHandler(IOService* target, IOAudioControl* muteControl, SInt32 oldValue, SInt32 newValue)
-{
-    IOReturn result = kIOReturnBadArgument;
-    AMDMicrophoneDevice* audioDevice;
-
-    audioDevice = (AMDMicrophoneDevice*)target;
-    if (audioDevice) {
-        result = audioDevice->inputMuteChanged(muteControl, oldValue, newValue);
-    }
-
-    return result;
-}
-
-IOReturn AMDMicrophoneDevice::inputMuteChanged(IOAudioControl* muteControl, SInt32 oldValue, SInt32 newValue)
-{
-    LOG("inputMuteChanged(%d, %d)\n", oldValue, newValue);
-
-    // Add input mute change code here
-
-    return kIOReturnSuccess;
 }
