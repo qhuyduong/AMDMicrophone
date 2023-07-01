@@ -8,8 +8,6 @@
 #ifndef AMDMicrophoneDevice_hpp
 #define AMDMicrophoneDevice_hpp
 
-#include <IOKit/IOLib.h>
-#include <IOKit/IOService.h>
 #include <IOKit/audio/IOAudioDevice.h>
 #include <IOKit/pci/IOPCIDevice.h>
 
