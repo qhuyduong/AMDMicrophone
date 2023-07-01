@@ -9,15 +9,21 @@
 			<key>CFBundleIdentifier</key>
 			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 			<key>IOClass</key>
-			<string>AMDMicrophone</string>
+			<string>AMDMicrophoneDevice</string>
+			<key>IOPCIClassMatch</key>
+			<string>0x04800000</string>
 			<key>IOPCIMatch</key>
 			<string>0x15e21022</string>
+			<key>IOProbeScore</key>
+			<string>2000</string>
 			<key>IOProviderClass</key>
 			<string>IOPCIDevice</string>
 		</dict>
 	</dict>
 	<key>OSBundleLibraries</key>
 	<dict>
+		<key>com.apple.iokit.IOAudioFamily</key>
+		<string>300.2</string>
 		<key>com.apple.iokit.IOPCIFamily</key>
 		<string>2.7</string>
 		<key>com.apple.kpi.iokit</key>
