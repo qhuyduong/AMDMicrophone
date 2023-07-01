@@ -6,6 +6,7 @@
 //
 
 #include "AMDMicrophoneDevice.hpp"
+
 #include "AMDMicrophoneCommon.hpp"
 #include "AMDMicrophoneEngine.hpp"
 
@@ -35,32 +36,13 @@ bool AMDMicrophoneDevice::createAudioEngine()
         goto Done;
     }
 
-    // Create a left & right input gain control with an int range from 0 to 65535
-    // and a db range from 0 to 22.5
     control = IOAudioLevelControl::createVolumeControl(65535, // Initial value
         0, // min value
         65535, // max value
         0, // min 0.0 in IOFixed
         (22 << 16) + (32768), // 22.5 in IOFixed (16.16)
-        kIOAudioControlChannelIDDefaultLeft,
-        kIOAudioControlChannelNameLeft,
-        0, // control ID - driver-defined
-        kIOAudioControlUsageInput);
-    if (!control) {
-        goto Done;
-    }
-
-    control->setValueChangeHandler((IOAudioControl::IntValueChangeHandler)gainChangeHandler, this);
-    audioEngine->addDefaultAudioControl(control);
-    control->release();
-
-    control = IOAudioLevelControl::createVolumeControl(65535, // Initial value
-        0, // min value
-        65535, // max value
-        0, // min 0.0 in IOFixed
-        (22 << 16) + (32768), // max 22.5 in IOFixed (16.16)
-        kIOAudioControlChannelIDDefaultRight, // Affects right channel
-        kIOAudioControlChannelNameRight,
+        kIOAudioControlChannelIDAll,
+        kIOAudioControlChannelNameAll,
         0, // control ID - driver-defined
         kIOAudioControlUsageInput);
     if (!control) {

@@ -6,6 +6,7 @@
 //
 
 #include "AMDMicrophoneEngine.hpp"
+
 #include "AMDMicrophoneCommon.hpp"
 
 #include <IOKit/IOFilterInterruptEventSource.h>
@@ -32,7 +33,7 @@ IOAudioStream* AMDMicrophoneEngine::createNewAudioStream(IOAudioStreamDirection 
         } else {
             IOAudioSampleRate rate;
             IOAudioStreamFormat format = {
-                2, // num channels
+                1, // num channels
                 kIOAudioStreamSampleFormatLinearPCM, // sample format
                 kIOAudioStreamNumericRepresentationSignedInt, // numeric format
                 BIT_DEPTH, // bit depth
@@ -122,6 +123,8 @@ Done:
 
 void AMDMicrophoneEngine::stop(IOService* provider)
 {
+    LOG("stop()\n");
+
     super::stop(provider);
 }
 
@@ -144,6 +147,8 @@ IOReturn AMDMicrophoneEngine::performAudioEngineStart()
 {
     LOG("performAudioEngineStart()\n");
 
+    takeTimeStamp();
+
     return kIOReturnSuccess;
 }
 
@@ -157,6 +162,61 @@ IOReturn AMDMicrophoneEngine::performAudioEngineStop()
 IOReturn AMDMicrophoneEngine::performFormatChange(IOAudioStream* audioStream, const IOAudioStreamFormat* newFormat, const IOAudioSampleRate* newSampleRate)
 {
     LOG("peformFormatChange()\n");
+
+    return kIOReturnSuccess;
+}
+
+// The function convertInputSamples() is responsible for converting from the hardware format
+// in the input sample buffer to float samples in the destination buffer and scale the samples
+// to a range of -1.0 to 1.0.  This function is guaranteed not to have the samples wrapped
+// from the end of the buffer to the beginning.
+// This function only needs to be implemented if the device has any input IOAudioStreams
+
+// This implementation is very inefficient, but illustrates the conversion and scaling that needs to take place.
+
+// The parameters are as follows:
+//		sampleBuf - a pointer to the beginning of the hardware formatted sample buffer - this is the same buffer passed
+//					to the IOAudioStream using setSampleBuffer()
+//		destBuf - a pointer to the float destination buffer - this is the buffer that the CoreAudio.framework uses
+//					its size is numSampleFrames * numChannels * sizeof(float)
+//		firstSampleFrame - this is the index of the first sample frame to the input conversion on
+//		numSampleFrames - the total number of sample frames to convert and scale
+//		streamFormat - the current format of the IOAudioStream this function is operating on
+//		audioStream - the audio stream this function is operating on
+IOReturn AMDMicrophoneEngine::convertInputSamples(const void* sampleBuf, void* destBuf, UInt32 firstSampleFrame, UInt32 numSampleFrames, const IOAudioStreamFormat* streamFormat, IOAudioStream* audioStream)
+{
+    UInt32 numSamplesLeft;
+    float* floatDestBuf;
+    SInt16* inputBuf;
+
+    // Start by casting the destination buffer to a float *
+    floatDestBuf = (float*)destBuf;
+    // Determine the starting point for our input conversion
+    inputBuf = &(((SInt16*)sampleBuf)[firstSampleFrame * streamFormat->fNumChannels]);
+
+    // Calculate the number of actual samples to convert
+    numSamplesLeft = numSampleFrames * streamFormat->fNumChannels;
+
+    // Loop through each sample and scale and convert them
+    while (numSamplesLeft > 0) {
+        SInt16 inputSample;
+
+        // Fetch the SInt16 input sample
+        inputSample = *inputBuf;
+
+        // Scale that sample to a range of -1.0 to 1.0, convert to float and store in the destination buffer
+        // at the proper location
+        if (inputSample >= 0) {
+            *floatDestBuf = inputSample / 32767.0;
+        } else {
+            *floatDestBuf = inputSample / 32768.0;
+        }
+
+        // Move on to the next sample
+        ++inputBuf;
+        ++floatDestBuf;
+        --numSamplesLeft;
+    }
 
     return kIOReturnSuccess;
 }

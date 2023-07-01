@@ -36,6 +36,7 @@ public:
     IOReturn performAudioEngineStart() override;
     IOReturn performAudioEngineStop() override;
     IOReturn performFormatChange(IOAudioStream* audioStream, const IOAudioStreamFormat* newFormat, const IOAudioSampleRate* newSampleRate) override;
+    IOReturn convertInputSamples(const void* sampleBuf, void* destBuf, UInt32 firstSampleFrame, UInt32 numSampleFrames, const IOAudioStreamFormat* streamFormat, IOAudioStream* audioStream) override;
 };
 
 #endif /* AMDMicrophoneEngine_hpp */
