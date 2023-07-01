@@ -8,8 +8,6 @@
 #ifndef AMDMicrophoneEngine_hpp
 #define AMDMicrophoneEngine_hpp
 
-#include "AMDMicrophoneCommon.hpp"
-
 #include <IOKit/audio/IOAudioEngine.h>
 
 class IOFilterInterruptEventSource;

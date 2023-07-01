@@ -6,6 +6,9 @@
 //
 
 #include "AMDMicrophoneEngine.hpp"
+#include "AMDMicrophoneCommon.hpp"
+
+#include <IOKit/IOFilterInterruptEventSource.h>
 
 #define super IOAudioEngine
 

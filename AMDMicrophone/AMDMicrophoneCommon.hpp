@@ -8,8 +8,8 @@
 #ifndef AMDMicrophoneCommon_h
 #define AMDMicrophoneCommon_h
 
-#include "AMDMicrophoneDevice.hpp"
-#include "AMDMicrophoneEngine.hpp"
+#include <IOKit/IOLib.h>
+#include <IOKit/IOService.h>
 
 #define LOG(fmt, ...) IOLog("%s: " fmt, this->getName(), ##__VA_ARGS__)
 

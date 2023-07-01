@@ -6,10 +6,13 @@
 //
 
 #include "AMDMicrophoneDevice.hpp"
+#include "AMDMicrophoneCommon.hpp"
+#include "AMDMicrophoneEngine.hpp"
 
 #include <IOKit/audio/IOAudioDefines.h>
 #include <IOKit/audio/IOAudioLevelControl.h>
 #include <IOKit/audio/IOAudioToggleControl.h>
+#include <IOKit/pci/IOPCIDevice.h>
 
 #define super IOAudioDevice
 
