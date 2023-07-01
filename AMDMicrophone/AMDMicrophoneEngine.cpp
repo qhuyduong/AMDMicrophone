@@ -91,6 +91,7 @@ void AMDMicrophoneEngine::free()
 bool AMDMicrophoneEngine::initHardware(IOService* provider)
 {
     bool result = false;
+    IOAudioSampleRate initialSampleRate;
     IOAudioStream* audioStream;
 
     LOG("initHardware\n");
@@ -99,7 +100,16 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
         goto Done;
     }
 
-    setDescription("AMD Digital Microphone Engine");
+    setDescription("AMD Digital Microphone");
+
+    // Setup the initial sample rate for the audio engine
+    initialSampleRate.whole = INITIAL_SAMPLE_RATE;
+    initialSampleRate.fraction = 0;
+
+    setSampleRate(&initialSampleRate);
+
+    // Set the number of sample frames in each buffer
+    setNumSampleFramesPerBuffer(NUM_SAMPLE_FRAMES);
 
     // Allocate our input and output buffers - a real driver will likely need to allocate its buffers
     // differently
