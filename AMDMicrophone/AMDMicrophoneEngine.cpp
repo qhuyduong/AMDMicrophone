@@ -25,7 +25,6 @@ IOAudioStream* AMDMicrophoneEngine::createNewAudioStream(IOAudioStreamDirection 
 {
     IOAudioStream* audioStream;
 
-    // For this sample device, we are only creating a single format and allowing 44.1KHz and 48KHz
     audioStream = new IOAudioStream;
     if (audioStream) {
         if (!audioStream->initWithAudioEngine(this, direction, 1)) {
@@ -33,29 +32,25 @@ IOAudioStream* AMDMicrophoneEngine::createNewAudioStream(IOAudioStreamDirection 
         } else {
             IOAudioSampleRate rate;
             IOAudioStreamFormat format = {
-                1, // num channels
-                kIOAudioStreamSampleFormatLinearPCM, // sample format
-                kIOAudioStreamNumericRepresentationSignedInt, // numeric format
-                BIT_DEPTH, // bit depth
-                BIT_DEPTH, // bit width
-                kIOAudioStreamAlignmentHighByte, // high byte aligned - unused because bit depth == bit width
-                kIOAudioStreamByteOrderBigEndian, // big endian
-                true, // format is mixable
-                0 // driver-defined tag - unused by this driver
+                1,
+                kIOAudioStreamSampleFormatLinearPCM,
+                kIOAudioStreamNumericRepresentationSignedInt,
+                BIT_DEPTH,
+                BIT_DEPTH,
+                kIOAudioStreamAlignmentHighByte,
+                kIOAudioStreamByteOrderBigEndian,
+                true,
+                0
             };
 
-            // As part of creating a new IOAudioStream, its sample buffer needs to be set
-            // It will automatically create a mix buffer should it be needed
             audioStream->setSampleBuffer(sampleBuffer, sampleBufferSize);
 
-            // This device only allows a single format and a choice of 2 different sample rates
             rate.fraction = 0;
             rate.whole = 44100;
             audioStream->addAvailableFormat(&format, &rate, &rate);
             rate.whole = 48000;
             audioStream->addAvailableFormat(&format, &rate, &rate);
 
-            // Finally, the IOAudioStream's current format needs to be indicated
             audioStream->setFormat(&format);
         }
     }
@@ -102,17 +97,11 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
 
     setDescription("AMD Digital Microphone");
 
-    // Setup the initial sample rate for the audio engine
     initialSampleRate.whole = INITIAL_SAMPLE_RATE;
     initialSampleRate.fraction = 0;
-
     setSampleRate(&initialSampleRate);
-
-    // Set the number of sample frames in each buffer
     setNumSampleFramesPerBuffer(NUM_SAMPLE_FRAMES);
 
-    // Allocate our input and output buffers - a real driver will likely need to allocate its buffers
-    // differently
     buffer = (SInt16*)IOMalloc(BUFFER_SIZE);
     if (!buffer) {
         goto Done;

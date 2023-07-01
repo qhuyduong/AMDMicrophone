@@ -36,14 +36,15 @@ bool AMDMicrophoneDevice::createAudioEngine()
         goto Done;
     }
 
-    control = IOAudioLevelControl::createVolumeControl(65535, // Initial value
-        0, // min value
-        65535, // max value
-        0, // min 0.0 in IOFixed
-        (22 << 16) + (32768), // 22.5 in IOFixed (16.16)
+    control = IOAudioLevelControl::createVolumeControl(
+        65535,
+        0,
+        65535,
+        0,
+        (22 << 16) + (32768),
         kIOAudioControlChannelIDAll,
         kIOAudioControlChannelNameAll,
-        0, // control ID - driver-defined
+        0,
         kIOAudioControlUsageInput);
     if (!control) {
         goto Done;
@@ -53,11 +54,11 @@ bool AMDMicrophoneDevice::createAudioEngine()
     audioEngine->addDefaultAudioControl(control);
     control->release();
 
-    // Create an input mute control
-    control = IOAudioToggleControl::createMuteControl(false, // initial state - unmuted
-        kIOAudioControlChannelIDAll, // Affects all channels
+    control = IOAudioToggleControl::createMuteControl(
+        false,
+        kIOAudioControlChannelIDAll,
         kIOAudioControlChannelNameAll,
-        0, // control ID - driver-defined
+        0,
         kIOAudioControlUsageInput);
 
     if (!control) {
