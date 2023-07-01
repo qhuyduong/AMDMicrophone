@@ -8,10 +8,10 @@
 #ifndef AMDMicrophoneDevice_hpp
 #define AMDMicrophoneDevice_hpp
 
+#include "AMDMicrophoneCommon.hpp"
+
 #include <IOKit/audio/IOAudioDevice.h>
 #include <IOKit/pci/IOPCIDevice.h>
-
-#define LOG(fmt, ...) IOLog("%s: " fmt, this->getName(), ##__VA_ARGS__)
 
 class AMDMicrophoneDevice : public IOAudioDevice {
     OSDeclareDefaultStructors(AMDMicrophoneDevice);
@@ -21,7 +21,7 @@ class AMDMicrophoneDevice : public IOAudioDevice {
     IOPCIDevice* pciDevice;
     IOMemoryMap* deviceMap;
 
-    virtual bool createAudioEngine();
+    bool createAudioEngine();
 
 public:
     IOService* probe(IOService* provider, SInt32* score) override;

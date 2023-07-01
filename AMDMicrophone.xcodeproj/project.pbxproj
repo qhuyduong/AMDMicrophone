@@ -12,6 +12,7 @@
 		59C7D53E2A48428E0021BF53 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 59C7D53D2A48428E0021BF53 /* libkmod.a */; };
 		59D3D4482A485F8400A37E77 /* AMDMicrophoneDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 59D3D4462A485F8400A37E77 /* AMDMicrophoneDevice.cpp */; };
 		59D3D4492A485F8400A37E77 /* AMDMicrophoneDevice.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 59D3D4472A485F8400A37E77 /* AMDMicrophoneDevice.hpp */; };
+		59F04C522A5035D300C54A35 /* AMDMicrophoneCommon.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 59F04C512A5035D300C54A35 /* AMDMicrophoneCommon.hpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +23,7 @@
 		59D3D4472A485F8400A37E77 /* AMDMicrophoneDevice.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = AMDMicrophoneDevice.hpp; sourceTree = "<group>"; };
 		59DC4C172A48415200635CAB /* AMDMicrophone.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AMDMicrophone.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		59DC4C1E2A48415200635CAB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		59F04C512A5035D300C54A35 /* AMDMicrophoneCommon.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = AMDMicrophoneCommon.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,6 +67,7 @@
 			isa = PBXGroup;
 			children = (
 				59DC4C1E2A48415200635CAB /* Info.plist */,
+				59F04C512A5035D300C54A35 /* AMDMicrophoneCommon.hpp */,
 				59D3D4462A485F8400A37E77 /* AMDMicrophoneDevice.cpp */,
 				59D3D4472A485F8400A37E77 /* AMDMicrophoneDevice.hpp */,
 				59B5B26C2A4F0FCF00BF122B /* AMDMicrophoneEngine.cpp */,
@@ -81,6 +84,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				59D3D4492A485F8400A37E77 /* AMDMicrophoneDevice.hpp in Headers */,
+				59F04C522A5035D300C54A35 /* AMDMicrophoneCommon.hpp in Headers */,
 				59B5B26F2A4F0FCF00BF122B /* AMDMicrophoneEngine.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

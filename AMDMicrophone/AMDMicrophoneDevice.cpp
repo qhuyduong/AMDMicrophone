@@ -6,7 +6,6 @@
 //
 
 #include "AMDMicrophoneDevice.hpp"
-#include "AMDMicrophoneEngine.hpp"
 
 #define super IOAudioDevice
 
