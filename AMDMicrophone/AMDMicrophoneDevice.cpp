@@ -162,6 +162,7 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
     setDeviceName("AMD Digital Microphone");
     setDeviceShortName("AMDMicrophone");
     setManufacturerName("AMD");
+    setDeviceTransportType(kIOAudioDeviceTransportTypePCI);
 
     if (!createAudioEngine()) {
         goto Done;
