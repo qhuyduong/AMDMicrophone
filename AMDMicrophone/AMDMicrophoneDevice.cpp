@@ -154,10 +154,8 @@ IOService* AMDMicrophoneDevice::probe(IOService* provider, SInt32* score)
 
     UInt8 revisionId = pciDevice->configRead8(kIOPCIConfigRevisionID);
 
-    if (revisionId == 0x01) {
-        LOG("Renoir detected\n");
-    } else {
-        LOG("Only Renoir is supported!\n");
+    if (revisionId != 0x01) {
+        LOG("Only Renoir is supported at the moment\n");
         return NULL;
     }
 
