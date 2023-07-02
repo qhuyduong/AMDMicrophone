@@ -172,7 +172,7 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
         goto Done;
     }
 
-    audioStream = createNewAudioStream(kIOAudioStreamDirectionInput, (UInt8*)audioDevice->buffer, kAudioSampleBufferSize);
+    audioStream = createNewAudioStream(kIOAudioStreamDirectionInput, audioDevice->dmaDescriptor->getBytesNoCopy(), kAudioSampleBufferSize);
     if (!audioStream) {
         goto Done;
     }
