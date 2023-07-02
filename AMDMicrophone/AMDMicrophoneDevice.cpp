@@ -76,13 +76,97 @@ IOBufferMemoryDescriptor* AMDMicrophoneDevice::allocateDMADescriptor(UInt32 size
     return IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, kIODirectionIn, size, 4096);
 }
 
+void AMDMicrophoneDevice::disableInterrupts()
+{
+    writel(ACP_EXT_INTR_STAT_CLEAR_MASK, baseAddr + ACP_EXTERNAL_INTR_STAT);
+    writel(0x00, baseAddr + ACP_EXTERNAL_INTR_ENB);
+}
+
+void AMDMicrophoneDevice::enableInterrupts()
+{
+    UInt32 extIntrCtrl;
+
+    writel(0x01, baseAddr + ACP_EXTERNAL_INTR_ENB);
+    extIntrCtrl = readl(baseAddr + ACP_EXTERNAL_INTR_CNTL);
+    extIntrCtrl |= ACP_ERROR_MASK;
+    writel(extIntrCtrl, baseAddr + ACP_EXTERNAL_INTR_CNTL);
+}
+
+int AMDMicrophoneDevice::powerOff()
+{
+    UInt32 val;
+    int timeout;
+
+    writel(ACP_PGFSM_CNTL_POWER_OFF_MASK, baseAddr + ACP_PGFSM_CONTROL);
+
+    timeout = 0;
+    while (++timeout < 500) {
+        val = readl(baseAddr + ACP_PGFSM_STATUS);
+        if ((val & ACP_PGFSM_STATUS_MASK) == ACP_POWERED_OFF)
+            return 0;
+        IODelay(1);
+    }
+
+    return kIOReturnTimeout;
+}
+
+int AMDMicrophoneDevice::powerOn()
+{
+    UInt32 val;
+    int timeout;
+
+    val = readl(baseAddr + ACP_PGFSM_STATUS);
+    if (val == 0)
+        return val;
+
+    if ((val & ACP_PGFSM_STATUS_MASK) != ACP_POWER_ON_IN_PROGRESS) {
+        writel(ACP_PGFSM_CNTL_POWER_ON_MASK, baseAddr + ACP_PGFSM_CONTROL);
+    }
+
+    timeout = 0;
+    while (++timeout < 500) {
+        val = readl(baseAddr + ACP_PGFSM_STATUS);
+        if (!val)
+            return 0;
+        IODelay(1);
+    }
+
+    return kIOReturnTimeout;
+}
+
+int AMDMicrophoneDevice::reset()
+{
+    UInt32 val;
+    int timeout;
+
+    writel(1, baseAddr + ACP_SOFT_RESET);
+    timeout = 0;
+    while (++timeout < 500) {
+        val = readl(baseAddr + ACP_SOFT_RESET);
+        if (val & ACP_SOFT_RESET_SOFTRESET_AUDDONE_MASK)
+            break;
+        cpu_relax();
+    }
+    writel(0, baseAddr + ACP_SOFT_RESET);
+    timeout = 0;
+    while (++timeout < 500) {
+        val = readl(baseAddr + ACP_SOFT_RESET);
+        if (!val)
+            return 0;
+        cpu_relax();
+    }
+    return kIOReturnTimeout;
+}
+
 IOService* AMDMicrophoneDevice::probe(IOService* provider, SInt32* score)
 {
     pciDevice = OSDynamicCast(IOPCIDevice, provider);
 
     UInt8 revisionId = pciDevice->configRead8(kIOPCIConfigRevisionID);
 
-    if (revisionId != 0x01) {
+    if (revisionId == 0x01) {
+        LOG("AMD Digital Microphone for Renoir\n");
+    } else {
         LOG("Only Renoir is supported at the moment\n");
         return NULL;
     }
@@ -137,6 +221,18 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
         goto Done;
     }
 
+    if (powerOn() != kIOReturnSuccess) {
+        LOG("power on failed\n");
+        goto Done;
+    }
+    writel(0x01, baseAddr + ACP_CONTROL);
+    if (reset() != kIOReturnSuccess) {
+        LOG("reset failed\n");
+        goto Done;
+    }
+    writel(0x03, baseAddr + ACP_CLKMUX_SEL);
+    enableInterrupts();
+
     result = true;
 
 Done:
@@ -145,6 +241,17 @@ Done:
     }
 
     return result;
+}
+
+void AMDMicrophoneDevice::stop(IOService* provider)
+{
+    disableInterrupts();
+    if (reset() != kIOReturnSuccess) {
+        LOG("reset failed\n");
+        return;
+    }
+    writel(0x00, baseAddr + ACP_CLKMUX_SEL);
+    writel(0x00, baseAddr + ACP_CONTROL);
 }
 
 void AMDMicrophoneDevice::free()
