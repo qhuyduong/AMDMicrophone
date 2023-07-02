@@ -22,8 +22,8 @@ class AMDMicrophoneDevice : public IOAudioDevice {
     AMDMicrophoneEngine* audioEngine;
     IOInterruptEventSource* interruptSource;
     IOPCIDevice* pciDevice;
-    IOMemoryMap* baseAddressMap;
-    IOVirtualAddress baseAddress;
+    IOMemoryMap* baseAddrMap;
+    IOVirtualAddress baseAddr;
 
     bool createAudioEngine();
     int findMSIInterruptTypeIndex();

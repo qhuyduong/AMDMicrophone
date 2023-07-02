@@ -73,7 +73,6 @@ void AMDMicrophoneDevice::interruptOccurred(OSObject* owner, IOInterruptEventSou
 
 IOBufferMemoryDescriptor* AMDMicrophoneDevice::allocateDMADescriptor(UInt32 size)
 {
-
     return IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, kIODirectionIn, size, 4096);
 }
 
@@ -109,12 +108,12 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
     pciDevice->setIOEnable(true);
     pciDevice->setMemoryEnable(true);
 
-    baseAddressMap = pciDevice->mapDeviceMemoryWithRegister(kIOPCIConfigBaseAddress0);
-    if (!baseAddressMap) {
+    baseAddrMap = pciDevice->mapDeviceMemoryWithRegister(kIOPCIConfigBaseAddress0);
+    if (!baseAddrMap) {
         goto Done;
     }
-    baseAddress = baseAddressMap->getVirtualAddress();
-    if (!baseAddress) {
+    baseAddr = baseAddrMap->getVirtualAddress();
+    if (!baseAddr) {
         goto Done;
     }
 
@@ -123,9 +122,12 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
         goto Done;
     }
 
-    interruptSource = IOInterruptEventSource::interruptEventSource(this,
+    interruptSource = IOInterruptEventSource::interruptEventSource(
+        this,
         (IOInterruptEventAction)&AMDMicrophoneDevice::interruptOccurred,
-        provider, findMSIInterruptTypeIndex());
+        provider,
+        findMSIInterruptTypeIndex()
+    );
 
     if (workLoop->addEventSource(interruptSource) != kIOReturnSuccess) {
         goto Done;
@@ -147,9 +149,9 @@ Done:
 
 void AMDMicrophoneDevice::free()
 {
-    if (baseAddressMap) {
-        baseAddressMap->release();
-        baseAddressMap = NULL;
+    if (baseAddrMap) {
+        baseAddrMap->release();
+        baseAddrMap = NULL;
     }
 
     super::free();

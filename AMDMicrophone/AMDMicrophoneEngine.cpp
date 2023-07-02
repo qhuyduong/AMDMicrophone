@@ -18,19 +18,21 @@
 
 #define super IOAudioEngine
 
-#define kAudioSampleRate 48000
-#define kAudioNumChannels 2
-#define kAudioSampleDepth 24
-#define kAudioSampleWidth 32
+#define kAudioSampleRate         48000
+#define kAudioNumChannels        2
+#define kAudioSampleDepth        24
+#define kAudioSampleWidth        32
 #define kAudioBufferSampleFrames kAudioSampleRate / 2
-#define kAudioSampleBufferSize (kAudioBufferSampleFrames * kAudioNumChannels * (kAudioSampleDepth / 8))
+#define kAudioSampleBufferSize   (kAudioBufferSampleFrames * kAudioNumChannels * (kAudioSampleDepth / 8))
 
 #define kAudioInterruptInterval 10000000 // 10ms = (1000 ms / 100 hz).
-#define kAudioInterruptHZ 100
+#define kAudioInterruptHZ       100
 
 OSDefineMetaClassAndStructors(AMDMicrophoneEngine, IOAudioEngine);
 
-IOAudioStream* AMDMicrophoneEngine::createNewAudioStream(IOAudioStreamDirection direction, void* sampleBuffer, UInt32 sampleBufferSize)
+IOAudioStream* AMDMicrophoneEngine::createNewAudioStream(
+    IOAudioStreamDirection direction, void* sampleBuffer, UInt32 sampleBufferSize
+)
 {
     IOAudioStream* audioStream;
 
@@ -77,7 +79,8 @@ bool AMDMicrophoneEngine::createControls()
         kIOAudioControlChannelIDAll,
         kIOAudioControlChannelNameAll,
         0,
-        kIOAudioControlUsageInput);
+        kIOAudioControlUsageInput
+    );
     if (!control) {
         goto Done;
     }
@@ -89,7 +92,8 @@ bool AMDMicrophoneEngine::createControls()
         kIOAudioControlChannelIDAll,
         kIOAudioControlChannelNameAll,
         0,
-        kIOAudioControlUsageInput);
+        kIOAudioControlUsageInput
+    );
 
     if (!control) {
         goto Done;
@@ -253,7 +257,9 @@ IOReturn AMDMicrophoneEngine::performAudioEngineStop()
     return kIOReturnSuccess;
 }
 
-IOReturn AMDMicrophoneEngine::performFormatChange(IOAudioStream* audioStream, const IOAudioStreamFormat* newFormat, const IOAudioSampleRate* newSampleRate)
+IOReturn AMDMicrophoneEngine::performFormatChange(
+    IOAudioStream* audioStream, const IOAudioStreamFormat* newFormat, const IOAudioSampleRate* newSampleRate
+)
 {
     LOG("peformFormatChange()\n");
     IOReturn result = kIOReturnSuccess;
@@ -273,7 +279,10 @@ IOReturn AMDMicrophoneEngine::performFormatChange(IOAudioStream* audioStream, co
     return result;
 }
 
-IOReturn AMDMicrophoneEngine::convertInputSamples(const void* sampleBuf, void* destBuf, UInt32 firstSampleFrame, UInt32 numSampleFrames, const IOAudioStreamFormat* streamFormat, IOAudioStream* audioStream)
+IOReturn AMDMicrophoneEngine::convertInputSamples(
+    const void* sampleBuf, void* destBuf, UInt32 firstSampleFrame, UInt32 numSampleFrames,
+    const IOAudioStreamFormat* streamFormat, IOAudioStream* audioStream
+)
 {
     UInt32 numSamplesLeft;
     float* floatDestBuf;

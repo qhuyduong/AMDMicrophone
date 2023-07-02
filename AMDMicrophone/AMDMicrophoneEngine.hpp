@@ -22,7 +22,9 @@ class AMDMicrophoneEngine : public IOAudioEngine {
     SInt64 nextTimeout;
     UInt32 interruptCount;
 
-    IOAudioStream* createNewAudioStream(IOAudioStreamDirection direction, void* sampleBuffer, UInt32 sampleBufferSize);
+    IOAudioStream* createNewAudioStream(
+        IOAudioStreamDirection direction, void* sampleBuffer, UInt32 sampleBufferSize
+    );
     bool createControls();
     static void interruptOccured(OSObject* owner, IOTimerEventSource* sender);
 
@@ -36,8 +38,12 @@ public:
     UInt32 getCurrentSampleFrame() override;
     IOReturn performAudioEngineStart() override;
     IOReturn performAudioEngineStop() override;
-    IOReturn performFormatChange(IOAudioStream* audioStream, const IOAudioStreamFormat* newFormat, const IOAudioSampleRate* newSampleRate) override;
-    IOReturn convertInputSamples(const void* sampleBuf, void* destBuf, UInt32 firstSampleFrame, UInt32 numSampleFrames, const IOAudioStreamFormat* streamFormat, IOAudioStream* audioStream) override;
+    IOReturn performFormatChange(
+        IOAudioStream* audioStream, const IOAudioStreamFormat* newFormat, const IOAudioSampleRate* newSampleRate
+    ) override;
+    IOReturn convertInputSamples(
+        const void* sampleBuf, void* destBuf, UInt32 firstSampleFrame, UInt32 numSampleFrames, const IOAudioStreamFormat* streamFormat, IOAudioStream* audioStream
+    ) override;
 };
 
 #endif /* AMDMicrophoneEngine_hpp */
