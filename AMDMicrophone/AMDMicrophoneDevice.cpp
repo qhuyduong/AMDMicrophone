@@ -200,11 +200,10 @@ void AMDMicrophoneDevice::enablePDMInterrupts()
     writel(extIntCtrl, baseAddr + ACP_EXTERNAL_INTR_CNTL);
 }
 
-void AMDMicrophoneDevice::initPDMRingBuffer(UInt32 physAddr, UInt32 bufferSize, UInt32 watermarkSize)
+void AMDMicrophoneDevice::initPDMRingBuffer(UInt32 physAddr, UInt32 bufferSize)
 {
     writel(physAddr, baseAddr + ACP_WOV_RX_RINGBUFADDR);
     writel(bufferSize, baseAddr + ACP_WOV_RX_RINGBUFSIZE);
-    writel(watermarkSize, baseAddr + ACP_WOV_RX_INTR_WATERMARK_SIZE);
     writel(0x01, baseAddr + ACP_AXI2AXI_ATU_CTRL);
 }
 
@@ -264,6 +263,31 @@ int AMDMicrophoneDevice::stopPDMDMA()
     return 0;
 }
 
+void AMDMicrophoneDevice::configDMA()
+{
+    UInt32 low, high, val;
+
+    val = 0;
+
+    /* Group Enable */
+    writel(ACP_SRAM_PTE_OFFSET | BIT(31), baseAddr + ACP_AXI2AXI_ATU_BASE_ADDR_GRP_1);
+    writel(ACP_PAGE_SIZE_4K_ENABLE, baseAddr + ACP_AXI2AXI_ATU_PAGE_SIZE_GRP_1);
+
+    IOByteCount offset = 0;
+    while (offset < dmaDescriptor->getLength()) {
+        IOByteCount segmentLength = 0;
+        addr64_t address = dmaDescriptor->getPhysicalSegment(offset, &segmentLength);
+        LOG("Physical segment: address 0x%llx segmentLength: %llu\n", address, segmentLength);
+
+        low = (UInt32)address;
+        high = (UInt32)(address >> 32);
+        writel(low, baseAddr + ACP_SCRATCH_REG_0 + val);
+        high |= BIT(31);
+        writel(high, baseAddr + ACP_SCRATCH_REG_0 + val + 4);
+        offset += segmentLength;
+        val += 8;
+    }
+}
 
 IOService* AMDMicrophoneDevice::probe(IOService* provider, SInt32* score)
 {

@@ -217,6 +217,7 @@ UInt32 AMDMicrophoneEngine::getCurrentSampleFrame()
 IOReturn AMDMicrophoneEngine::performAudioEngineStart()
 {
     UInt64 time, timeNS;
+    bool pdmStatus;
 
     LOG("performAudioEngineStart()\n");
     interruptCount = 0;
@@ -228,13 +229,30 @@ IOReturn AMDMicrophoneEngine::performAudioEngineStart()
 
     nextTimeout = timeNS + kAudioInterruptInterval;
 
+    audioDevice->enablePDMInterrupts();
+    audioDevice->configDMA();
+    audioDevice->initPDMRingBuffer(ACP_MEM_WINDOW_START, kAudioSampleBufferSize);
+    writel(0, audioDevice->baseAddr + ACP_WOV_PDM_NO_OF_CHANNELS);
+    writel(ACP_PDM_DECIMATION_FACTOR, audioDevice->baseAddr + ACP_WOV_PDM_DECIMATION_FACTOR);
+    pdmStatus = audioDevice->checkPDMDMAStatus();
+    if (!pdmStatus) {
+        audioDevice->startPDMDMA();
+    }
+
     return kIOReturnSuccess;
 }
 
 IOReturn AMDMicrophoneEngine::performAudioEngineStop()
 {
+    bool pdmStatus;
+
     LOG("performAudioEngineStop()\n");
     interruptSource->cancelTimeout();
+
+    pdmStatus = audioDevice->checkPDMDMAStatus();
+    if (pdmStatus) {
+        audioDevice->stopPDMDMA();
+    }
 
     return kIOReturnSuccess;
 }
