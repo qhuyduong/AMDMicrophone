@@ -40,7 +40,7 @@ IOAudioStream* AMDMicrophoneEngine::createNewAudioStream(IOAudioStreamDirection 
         } else {
             IOAudioSampleRate rate;
             IOAudioStreamFormat format = {
-                2,
+                kAudioNumChannels,
                 kIOAudioStreamSampleFormatLinearPCM,
                 kIOAudioStreamNumericRepresentationSignedInt,
                 kAudioSampleDepth,
@@ -62,44 +62,10 @@ IOAudioStream* AMDMicrophoneEngine::createNewAudioStream(IOAudioStreamDirection 
     return audioStream;
 }
 
-bool AMDMicrophoneEngine::init()
-{
-    if (!super::init(NULL)) {
-        return false;
-    }
-
-    return true;
-}
-
-void AMDMicrophoneEngine::free()
-{
-    if (buffer) {
-        IOFree(buffer, kAudioSampleBufferSize);
-        buffer = NULL;
-    }
-
-    super::free();
-}
-
-bool AMDMicrophoneEngine::initHardware(IOService* provider)
+bool AMDMicrophoneEngine::createControls()
 {
     bool result = false;
-    IOAudioSampleRate initialSampleRate;
     IOAudioControl* control;
-    IOAudioStream* audioStream;
-
-    if (!super::initHardware(provider)) {
-        goto Done;
-    }
-
-    setDescription("AMD Digital Microphone");
-
-    initialSampleRate.whole = kAudioSampleRate;
-    initialSampleRate.fraction = 0;
-    setSampleRate(&initialSampleRate);
-    // Set the number of sample frames in each buffer
-    setNumSampleFramesPerBuffer(kAudioBufferSampleFrames);
-    setInputSampleLatency(kAudioSampleRate / kAudioInterruptHZ);
 
     control = IOAudioLevelControl::createVolumeControl(
         65535,
@@ -131,6 +97,54 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
     addDefaultAudioControl(control);
     control->release();
 
+    result = true;
+
+Done:
+    return result;
+}
+
+bool AMDMicrophoneEngine::init()
+{
+    if (!super::init(NULL)) {
+        return false;
+    }
+
+    return true;
+}
+
+void AMDMicrophoneEngine::free()
+{
+    if (buffer) {
+        IOFree(buffer, kAudioSampleBufferSize);
+        buffer = NULL;
+    }
+
+    super::free();
+}
+
+bool AMDMicrophoneEngine::initHardware(IOService* provider)
+{
+    bool result = false;
+    IOAudioSampleRate initialSampleRate;
+    IOAudioStream* audioStream;
+
+    if (!super::initHardware(provider)) {
+        goto Done;
+    }
+
+    setDescription("AMD Digital Microphone");
+
+    initialSampleRate.whole = kAudioSampleRate;
+    initialSampleRate.fraction = 0;
+    setSampleRate(&initialSampleRate);
+    // Set the number of sample frames in each buffer
+    setNumSampleFramesPerBuffer(kAudioBufferSampleFrames);
+    setInputSampleLatency(kAudioSampleRate / kAudioInterruptHZ);
+
+    if (!createControls()) {
+        goto Done;
+    }
+
     buffer = (SInt16*)IOMalloc(kAudioSampleBufferSize);
     if (!buffer) {
         goto Done;
@@ -144,8 +158,8 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
     audioStream->release();
 
     result = true;
-Done:
 
+Done:
     return result;
 }
 

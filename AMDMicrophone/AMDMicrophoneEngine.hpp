@@ -18,6 +18,7 @@ class AMDMicrophoneEngine : public IOAudioEngine {
     SInt16* buffer;
 
     IOAudioStream* createNewAudioStream(IOAudioStreamDirection direction, void* sampleBuffer, UInt32 sampleBufferSize);
+    bool createControls();
 
 public:
     bool init();
