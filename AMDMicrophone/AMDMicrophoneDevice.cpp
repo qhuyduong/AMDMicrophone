@@ -28,7 +28,7 @@ bool AMDMicrophoneDevice::createAudioEngine()
         goto Done;
     }
 
-    if (!audioEngine->init()) {
+    if (!audioEngine->init(this)) {
         goto Done;
     }
 

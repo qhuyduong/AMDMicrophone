@@ -8,6 +8,7 @@
 #include "AMDMicrophoneEngine.hpp"
 
 #include "AMDMicrophoneCommon.hpp"
+#include "AMDMicrophoneDevice.hpp"
 
 #include <IOKit/IOTimerEventSource.h>
 #include <IOKit/audio/IOAudioDefines.h>
@@ -127,11 +128,13 @@ void AMDMicrophoneEngine::interruptOccured(OSObject* owner, IOTimerEventSource* 
     audioEngine->nextTimeout += kAudioInterruptInterval;
 }
 
-bool AMDMicrophoneEngine::init()
+bool AMDMicrophoneEngine::init(AMDMicrophoneDevice* device)
 {
     if (!super::init(NULL)) {
         return false;
     }
+
+    audioDevice = device;
 
     return true;
 }
@@ -169,12 +172,7 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
         goto Done;
     }
 
-    // buffer = (SInt16*)IOMalloc(kAudioSampleBufferSize);
-    // if (!buffer) {
-    //     goto Done;
-    // }
-
-    audioStream = createNewAudioStream(kIOAudioStreamDirectionInput, buffer, kAudioSampleBufferSize);
+    audioStream = createNewAudioStream(kIOAudioStreamDirectionInput, (UInt8*)audioDevice->buffer, kAudioSampleBufferSize);
     if (!audioStream) {
         goto Done;
     }

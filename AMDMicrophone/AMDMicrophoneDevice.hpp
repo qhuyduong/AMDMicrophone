@@ -17,10 +17,13 @@ class IOPCIDevice;
 class AMDMicrophoneDevice : public IOAudioDevice {
     OSDeclareDefaultStructors(AMDMicrophoneDevice);
 
-    IOPCIDevice* pciDevice;
-    IOMemoryMap* deviceMap;
+    friend class AMDMicrophoneEngine;
+
     AMDMicrophoneEngine* audioEngine;
     IOInterruptEventSource* interruptSource;
+    IOMemoryMap* deviceMap;
+    IOPCIDevice* pciDevice;
+    IOVirtualAddress buffer;
 
     bool createAudioEngine();
     int findMSIInterruptTypeIndex();

@@ -10,22 +10,23 @@
 
 #include <IOKit/audio/IOAudioEngine.h>
 
+class AMDMicrophoneDevice;
 class IOTimerEventSource;
 
 class AMDMicrophoneEngine : public IOAudioEngine {
     OSDeclareDefaultStructors(AMDMicrophoneEngine);
 
-    SInt16* buffer;
+    AMDMicrophoneDevice* audioDevice;
     IOTimerEventSource* interruptSource;
-    UInt32 interruptCount;
     SInt64 nextTimeout;
+    UInt32 interruptCount;
 
     IOAudioStream* createNewAudioStream(IOAudioStreamDirection direction, void* sampleBuffer, UInt32 sampleBufferSize);
     bool createControls();
     static void interruptOccured(OSObject* owner, IOTimerEventSource* sender);
 
 public:
-    bool init();
+    bool init(AMDMicrophoneDevice* device);
     void free() override;
 
     bool initHardware(IOService* provider) override;
