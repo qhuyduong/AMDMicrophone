@@ -10,23 +10,21 @@
 
 #include <IOKit/audio/IOAudioDevice.h>
 
+class AMDMicrophoneEngine;
+class IOInterruptEventSource;
 class IOPCIDevice;
 
 class AMDMicrophoneDevice : public IOAudioDevice {
     OSDeclareDefaultStructors(AMDMicrophoneDevice);
 
-    friend class AMDMicrophoneEngine;
-
     IOPCIDevice* pciDevice;
     IOMemoryMap* deviceMap;
+    AMDMicrophoneEngine* audioEngine;
+    IOInterruptEventSource* interruptSource;
 
     bool createAudioEngine();
-
-    static IOReturn gainChangeHandler(IOService* target, IOAudioControl* gainControl, SInt32 oldValue, SInt32 newValue);
-    IOReturn gainChanged(IOAudioControl* gainControl, SInt32 oldValue, SInt32 newValue);
-
-    static IOReturn inputMuteChangeHandler(IOService* target, IOAudioControl* muteControl, SInt32 oldValue, SInt32 newValue);
-    IOReturn inputMuteChanged(IOAudioControl* muteControl, SInt32 oldValue, SInt32 newValue);
+    int findMSIInterruptTypeIndex();
+    static void interruptOccurred(OSObject* owner, IOInterruptEventSource* src, int intCount);
 
 public:
     IOService* probe(IOService* provider, SInt32* score) override;

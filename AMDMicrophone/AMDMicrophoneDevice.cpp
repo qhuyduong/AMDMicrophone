@@ -10,9 +10,7 @@
 #include "AMDMicrophoneCommon.hpp"
 #include "AMDMicrophoneEngine.hpp"
 
-#include <IOKit/audio/IOAudioDefines.h>
-#include <IOKit/audio/IOAudioLevelControl.h>
-#include <IOKit/audio/IOAudioToggleControl.h>
+#include <IOKit/IOInterruptEventSource.h>
 #include <IOKit/pci/IOPCIDevice.h>
 
 #define super IOAudioDevice
@@ -22,8 +20,6 @@ OSDefineMetaClassAndStructors(AMDMicrophoneDevice, IOAudioDevice);
 bool AMDMicrophoneDevice::createAudioEngine()
 {
     bool result = false;
-    AMDMicrophoneEngine* audioEngine = NULL;
-    IOAudioControl* control;
 
     LOG("createAudioEngine()\n");
 
@@ -35,39 +31,6 @@ bool AMDMicrophoneDevice::createAudioEngine()
     if (!audioEngine->init()) {
         goto Done;
     }
-
-    control = IOAudioLevelControl::createVolumeControl(
-        65535,
-        0,
-        65535,
-        0,
-        (22 << 16) + (32768),
-        kIOAudioControlChannelIDAll,
-        kIOAudioControlChannelNameAll,
-        0,
-        kIOAudioControlUsageInput);
-    if (!control) {
-        goto Done;
-    }
-
-    control->setValueChangeHandler((IOAudioControl::IntValueChangeHandler)gainChangeHandler, this);
-    audioEngine->addDefaultAudioControl(control);
-    control->release();
-
-    control = IOAudioToggleControl::createMuteControl(
-        false,
-        kIOAudioControlChannelIDAll,
-        kIOAudioControlChannelNameAll,
-        0,
-        kIOAudioControlUsageInput);
-
-    if (!control) {
-        goto Done;
-    }
-
-    control->setValueChangeHandler((IOAudioControl::IntValueChangeHandler)inputMuteChangeHandler, this);
-    audioEngine->addDefaultAudioControl(control);
-    control->release();
 
     if (activateAudioEngine(audioEngine) != kIOReturnSuccess) {
         LOG("ERROR activateAudioEngine failed\n");
@@ -84,51 +47,28 @@ Done:
     return result;
 }
 
-IOReturn AMDMicrophoneDevice::gainChangeHandler(IOService* target, IOAudioControl* gainControl, SInt32 oldValue, SInt32 newValue)
+int AMDMicrophoneDevice::findMSIInterruptTypeIndex()
 {
-    IOReturn result = kIOReturnBadArgument;
-    AMDMicrophoneDevice* audioDevice;
-
-    audioDevice = (AMDMicrophoneDevice*)target;
-    if (audioDevice) {
-        result = audioDevice->gainChanged(gainControl, oldValue, newValue);
+    IOReturn ret;
+    int index, source = 0;
+    for (index = 0;; index++) {
+        int interruptType;
+        ret = pciDevice->getInterruptType(index, &interruptType);
+        if (ret != kIOReturnSuccess)
+            break;
+        if (interruptType & kIOInterruptTypePCIMessaged) {
+            source = index;
+            break;
+        }
     }
-
-    return result;
+    return source;
 }
 
-IOReturn AMDMicrophoneDevice::gainChanged(IOAudioControl* gainControl, SInt32 oldValue, SInt32 newValue)
+void AMDMicrophoneDevice::interruptOccurred(OSObject* owner, IOInterruptEventSource* src, int intCount)
 {
-    LOG("gainChanged(%d, %d)\n", oldValue, newValue);
+    AMDMicrophoneDevice* me = (AMDMicrophoneDevice*)owner;
 
-    if (gainControl) {
-        LOG("\t-> Channel %d\n", gainControl->getChannelID());
-    }
-
-    // Add hardware gain change code here
-    return kIOReturnSuccess;
-}
-
-IOReturn AMDMicrophoneDevice::inputMuteChangeHandler(IOService* target, IOAudioControl* muteControl, SInt32 oldValue, SInt32 newValue)
-{
-    IOReturn result = kIOReturnBadArgument;
-    AMDMicrophoneDevice* audioDevice;
-
-    audioDevice = (AMDMicrophoneDevice*)target;
-    if (audioDevice) {
-        result = audioDevice->inputMuteChanged(muteControl, oldValue, newValue);
-    }
-
-    return result;
-}
-
-IOReturn AMDMicrophoneDevice::inputMuteChanged(IOAudioControl* muteControl, SInt32 oldValue, SInt32 newValue)
-{
-    LOG("inputMuteChanged(%d, %d)\n", oldValue, newValue);
-
-    // Add input mute change code here
-
-    return kIOReturnSuccess;
+    // Start next DMA
 }
 
 IOService* AMDMicrophoneDevice::probe(IOService* provider, SInt32* score)
@@ -148,6 +88,7 @@ IOService* AMDMicrophoneDevice::probe(IOService* provider, SInt32* score)
 bool AMDMicrophoneDevice::initHardware(IOService* provider)
 {
     bool result = false;
+    IOWorkLoop* workLoop;
 
     if (!super::initHardware(provider)) {
         goto Done;
@@ -164,6 +105,19 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
     setDeviceShortName("AMDMicrophone");
     setManufacturerName("AMD");
     setDeviceTransportType(kIOAudioDeviceTransportTypePCI);
+
+    workLoop = getWorkLoop();
+    if (!workLoop) {
+        goto Done;
+    }
+
+    interruptSource = IOInterruptEventSource::interruptEventSource(this,
+        (IOInterruptEventAction)&AMDMicrophoneDevice::interruptOccurred,
+        provider, findMSIInterruptTypeIndex());
+
+    if (workLoop->addEventSource(interruptSource) != kIOReturnSuccess) {
+        goto Done;
+    }
 
     if (!createAudioEngine()) {
         goto Done;

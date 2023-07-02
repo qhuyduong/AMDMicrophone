@@ -10,20 +10,14 @@
 
 #include <IOKit/audio/IOAudioEngine.h>
 
-class IOInterruptEventSource;
-class IOFilterInterruptEventSource;
+class IOTimerEventSource;
 
 class AMDMicrophoneEngine : public IOAudioEngine {
     OSDeclareDefaultStructors(AMDMicrophoneEngine);
 
-    IOFilterInterruptEventSource* interruptEventSource;
     SInt16* buffer;
 
     IOAudioStream* createNewAudioStream(IOAudioStreamDirection direction, void* sampleBuffer, UInt32 sampleBufferSize);
-
-    void filterInterrupt(int index);
-    static void interruptHandler(OSObject* owner, IOInterruptEventSource* source, int count);
-    static bool interruptFilter(OSObject* owner, IOFilterInterruptEventSource* source);
 
 public:
     bool init();

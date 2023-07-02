@@ -9,15 +9,23 @@
 
 #include "AMDMicrophoneCommon.hpp"
 
-#include <IOKit/IOFilterInterruptEventSource.h>
+#include <IOKit/IOTimerEventSource.h>
+#include <IOKit/audio/IOAudioDefines.h>
 #include <IOKit/audio/IOAudioDevice.h>
+#include <IOKit/audio/IOAudioLevelControl.h>
+#include <IOKit/audio/IOAudioToggleControl.h>
 
 #define super IOAudioEngine
-#define INITIAL_SAMPLE_RATE 44100
-#define NUM_SAMPLE_FRAMES 16384
-#define NUM_CHANNELS 1
-#define BIT_DEPTH 16
-#define BUFFER_SIZE (NUM_SAMPLE_FRAMES * NUM_CHANNELS * BIT_DEPTH / 8)
+
+#define kAudioSampleRate 48000
+#define kAudioNumChannels 2
+#define kAudioSampleDepth 24
+#define kAudioSampleWidth 32
+#define kAudioBufferSampleFrames kAudioSampleRate / 2
+#define kAudioSampleBufferSize (kAudioBufferSampleFrames * kAudioNumChannels * (kAudioSampleDepth / 8))
+
+#define kAudioInterruptInterval 10000000 // 10ms = (1000 ms / 100 hz).
+#define kAudioInterruptHZ 100
 
 OSDefineMetaClassAndStructors(AMDMicrophoneEngine, IOAudioEngine);
 
@@ -32,25 +40,21 @@ IOAudioStream* AMDMicrophoneEngine::createNewAudioStream(IOAudioStreamDirection 
         } else {
             IOAudioSampleRate rate;
             IOAudioStreamFormat format = {
-                1,
+                2,
                 kIOAudioStreamSampleFormatLinearPCM,
                 kIOAudioStreamNumericRepresentationSignedInt,
-                BIT_DEPTH,
-                BIT_DEPTH,
-                kIOAudioStreamAlignmentHighByte,
-                kIOAudioStreamByteOrderBigEndian,
+                kAudioSampleDepth,
+                kAudioSampleWidth,
+                kIOAudioStreamAlignmentLowByte,
+                kIOAudioStreamByteOrderLittleEndian,
                 true,
                 0
             };
 
             audioStream->setSampleBuffer(sampleBuffer, sampleBufferSize);
-
             rate.fraction = 0;
-            rate.whole = 44100;
+            rate.whole = kAudioSampleRate;
             audioStream->addAvailableFormat(&format, &rate, &rate);
-            rate.whole = 48000;
-            audioStream->addAvailableFormat(&format, &rate, &rate);
-
             audioStream->setFormat(&format);
         }
     }
@@ -60,23 +64,17 @@ IOAudioStream* AMDMicrophoneEngine::createNewAudioStream(IOAudioStreamDirection 
 
 bool AMDMicrophoneEngine::init()
 {
-    bool result = false;
-
     if (!super::init(NULL)) {
-        goto Done;
+        return false;
     }
 
-    result = true;
-Done:
-    return result;
+    return true;
 }
 
 void AMDMicrophoneEngine::free()
 {
-    LOG("free\n");
-
     if (buffer) {
-        IOFree(buffer, BUFFER_SIZE);
+        IOFree(buffer, kAudioSampleBufferSize);
         buffer = NULL;
     }
 
@@ -87,9 +85,8 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
 {
     bool result = false;
     IOAudioSampleRate initialSampleRate;
+    IOAudioControl* control;
     IOAudioStream* audioStream;
-
-    LOG("initHardware\n");
 
     if (!super::initHardware(provider)) {
         goto Done;
@@ -97,17 +94,49 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
 
     setDescription("AMD Digital Microphone");
 
-    initialSampleRate.whole = INITIAL_SAMPLE_RATE;
+    initialSampleRate.whole = kAudioSampleRate;
     initialSampleRate.fraction = 0;
     setSampleRate(&initialSampleRate);
-    setNumSampleFramesPerBuffer(NUM_SAMPLE_FRAMES);
+    // Set the number of sample frames in each buffer
+    setNumSampleFramesPerBuffer(kAudioBufferSampleFrames);
+    setInputSampleLatency(kAudioSampleRate / kAudioInterruptHZ);
 
-    buffer = (SInt16*)IOMalloc(BUFFER_SIZE);
+    control = IOAudioLevelControl::createVolumeControl(
+        65535,
+        0,
+        65535,
+        0,
+        (22 << 16) + (32768),
+        kIOAudioControlChannelIDAll,
+        kIOAudioControlChannelNameAll,
+        0,
+        kIOAudioControlUsageInput);
+    if (!control) {
+        goto Done;
+    }
+    addDefaultAudioControl(control);
+    control->release();
+
+    control = IOAudioToggleControl::createMuteControl(
+        false,
+        kIOAudioControlChannelIDAll,
+        kIOAudioControlChannelNameAll,
+        0,
+        kIOAudioControlUsageInput);
+
+    if (!control) {
+        goto Done;
+    }
+
+    addDefaultAudioControl(control);
+    control->release();
+
+    buffer = (SInt16*)IOMalloc(kAudioSampleBufferSize);
     if (!buffer) {
         goto Done;
     }
 
-    audioStream = createNewAudioStream(kIOAudioStreamDirectionInput, buffer, BUFFER_SIZE);
+    audioStream = createNewAudioStream(kIOAudioStreamDirectionInput, buffer, kAudioSampleBufferSize);
     if (!audioStream) {
         goto Done;
     }
@@ -122,31 +151,18 @@ Done:
 
 void AMDMicrophoneEngine::stop(IOService* provider)
 {
-    LOG("stop()\n");
-
     super::stop(provider);
 }
 
 UInt32 AMDMicrophoneEngine::getCurrentSampleFrame()
 {
     LOG("getCurrentSampleFrame()\n");
-
-    // In order for the erase process to run properly, this function must return the current location of
-    // the audio engine - basically a sample counter
-    // It doesn't need to be exact, but if it is inexact, it should err towards being before the current location
-    // rather than after the current location.  The erase head will erase up to, but not including the sample
-    // frame returned by this function.  If it is too large a value, sound data that hasn't been played will be
-    // erased.
-
-    // Change to return the real value
     return 0;
 }
 
 IOReturn AMDMicrophoneEngine::performAudioEngineStart()
 {
     LOG("performAudioEngineStart()\n");
-
-    takeTimeStamp();
 
     return kIOReturnSuccess;
 }
@@ -161,27 +177,26 @@ IOReturn AMDMicrophoneEngine::performAudioEngineStop()
 IOReturn AMDMicrophoneEngine::performFormatChange(IOAudioStream* audioStream, const IOAudioStreamFormat* newFormat, const IOAudioSampleRate* newSampleRate)
 {
     LOG("peformFormatChange()\n");
+    IOReturn result = kIOReturnSuccess;
 
-    return kIOReturnSuccess;
+    // Since we only allow one format, we only need to be concerned with sample rate changes
+    // In this case, we only allow 2 sample rates - 44100 & 48000, so those are the only ones
+    // that we check for
+    if (newSampleRate) {
+        switch (newSampleRate->whole) {
+        case kAudioSampleRate:
+            result = kIOReturnSuccess;
+            break;
+        default:
+            result = kIOReturnUnsupported;
+            LOG("Internal Error - unknown sample rate selected.\n");
+            break;
+        }
+    }
+
+    return result;
 }
 
-// The function convertInputSamples() is responsible for converting from the hardware format
-// in the input sample buffer to float samples in the destination buffer and scale the samples
-// to a range of -1.0 to 1.0.  This function is guaranteed not to have the samples wrapped
-// from the end of the buffer to the beginning.
-// This function only needs to be implemented if the device has any input IOAudioStreams
-
-// This implementation is very inefficient, but illustrates the conversion and scaling that needs to take place.
-
-// The parameters are as follows:
-//		sampleBuf - a pointer to the beginning of the hardware formatted sample buffer - this is the same buffer passed
-//					to the IOAudioStream using setSampleBuffer()
-//		destBuf - a pointer to the float destination buffer - this is the buffer that the CoreAudio.framework uses
-//					its size is numSampleFrames * numChannels * sizeof(float)
-//		firstSampleFrame - this is the index of the first sample frame to the input conversion on
-//		numSampleFrames - the total number of sample frames to convert and scale
-//		streamFormat - the current format of the IOAudioStream this function is operating on
-//		audioStream - the audio stream this function is operating on
 IOReturn AMDMicrophoneEngine::convertInputSamples(const void* sampleBuf, void* destBuf, UInt32 firstSampleFrame, UInt32 numSampleFrames, const IOAudioStreamFormat* streamFormat, IOAudioStream* audioStream)
 {
     UInt32 numSamplesLeft;
@@ -206,9 +221,9 @@ IOReturn AMDMicrophoneEngine::convertInputSamples(const void* sampleBuf, void* d
         // Scale that sample to a range of -1.0 to 1.0, convert to float and store in the destination buffer
         // at the proper location
         if (inputSample >= 0) {
-            *floatDestBuf = inputSample / 32767.0;
+            *floatDestBuf = inputSample / 32767.0f;
         } else {
-            *floatDestBuf = inputSample / 32768.0;
+            *floatDestBuf = inputSample / 32768.0f;
         }
 
         // Move on to the next sample
