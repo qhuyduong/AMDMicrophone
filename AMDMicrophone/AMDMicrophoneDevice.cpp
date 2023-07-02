@@ -68,7 +68,12 @@ void AMDMicrophoneDevice::interruptOccurred(OSObject* owner, IOInterruptEventSou
 {
     AMDMicrophoneDevice* me = (AMDMicrophoneDevice*)owner;
 
-    // Start next DMA
+    UInt32 val;
+
+    val = readl(me->baseAddr + ACP_EXTERNAL_INTR_STAT);
+    if (val & BIT(PDM_DMA_STAT)) {
+        writel(BIT(PDM_DMA_STAT), me->baseAddr + ACP_EXTERNAL_INTR_STAT);
+    }
 }
 
 IOBufferMemoryDescriptor* AMDMicrophoneDevice::allocateDMADescriptor(UInt32 size)

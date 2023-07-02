@@ -12,6 +12,7 @@
 
 #define ACP_POWER_ON_IN_PROGRESS 0x01
 #define ACP_POWERED_OFF          0x02
+#define PDM_DMA_STAT             0x10
 
 #define ACP_PHY_BASE_ADDRESS   0x1240000
 #define ACP_SOFT_RESET         0x1241000
@@ -29,7 +30,9 @@
 #define ACP_PGFSM_CNTL_POWER_ON_MASK          0x01
 #define ACP_PGFSM_STATUS_MASK                 0x03
 #define ACP_SOFT_RESET_SOFTRESET_AUDDONE_MASK 0x00010001
+#define PDM_DMA_INTR_MASK                     0x10000
 
+#define BIT(n)      (1UL << (n))
 #define cpu_relax() asm volatile("rep; nop")
 
 static inline UInt32 readl(IOVirtualAddress addr)
