@@ -71,8 +71,8 @@ void AMDMicrophoneDevice::interruptOccurred(OSObject* owner, IOInterruptEventSou
     UInt32 val;
 
     val = readl(me->baseAddr + ACP_EXTERNAL_INTR_STAT);
-    if (val & BIT(PDM_DMA_STAT)) {
-        writel(BIT(PDM_DMA_STAT), me->baseAddr + ACP_EXTERNAL_INTR_STAT);
+    if (val & BIT(ACP_PDM_DMA_STAT)) {
+        writel(BIT(ACP_PDM_DMA_STAT), me->baseAddr + ACP_EXTERNAL_INTR_STAT);
     }
 }
 
@@ -162,6 +162,113 @@ int AMDMicrophoneDevice::reset()
     }
     return kIOReturnTimeout;
 }
+
+bool AMDMicrophoneDevice::checkPDMDMAStatus()
+{
+    bool pdmDMAStatus;
+    UInt32 pdmEnable, pdmDMAEnable;
+
+    pdmDMAStatus = false;
+    pdmEnable = readl(baseAddr + ACP_WOV_PDM_ENABLE);
+    pdmDMAEnable = readl(baseAddr + ACP_WOV_PDM_DMA_ENABLE);
+    if ((pdmEnable & ACP_PDM_ENABLE) && (pdmDMAEnable & ACP_PDM_DMA_EN_STATUS))
+        pdmDMAStatus = true;
+    return pdmDMAStatus;
+}
+
+void AMDMicrophoneDevice::disablePDMInterrupts()
+{
+    UInt32 extIntCtrl;
+
+    extIntCtrl = readl(baseAddr + ACP_EXTERNAL_INTR_CNTL);
+    extIntCtrl |= ~ACP_PDM_DMA_INTR_MASK;
+    writel(extIntCtrl, baseAddr + ACP_EXTERNAL_INTR_CNTL);
+}
+
+void AMDMicrophoneDevice::enablePDMClock()
+{
+    UInt32 pdmClkEnable, pdmCtrl;
+
+    pdmClkEnable = ACP_PDM_CLK_FREQ_MASK;
+    writel(pdmClkEnable, baseAddr + ACP_WOV_CLK_CTRL);
+    pdmCtrl = readl(baseAddr + ACP_WOV_MISC_CTRL);
+    pdmCtrl |= ACP_WOV_MISC_CTRL_MASK;
+    writel(pdmCtrl, baseAddr + ACP_WOV_MISC_CTRL);
+}
+
+void AMDMicrophoneDevice::enablePDMInterrupts()
+{
+    UInt32 extIntCtrl;
+
+    extIntCtrl = readl(baseAddr + ACP_EXTERNAL_INTR_CNTL);
+    extIntCtrl |= ACP_PDM_DMA_INTR_MASK;
+    writel(extIntCtrl, baseAddr + ACP_EXTERNAL_INTR_CNTL);
+}
+
+void AMDMicrophoneDevice::initPDMRingBuffer(UInt32 physAddr, UInt32 bufferSize, UInt32 watermarkSize)
+{
+    writel(physAddr, baseAddr + ACP_WOV_RX_RINGBUFADDR);
+    writel(bufferSize, baseAddr + ACP_WOV_RX_RINGBUFSIZE);
+    writel(watermarkSize, baseAddr + ACP_WOV_RX_INTR_WATERMARK_SIZE);
+    writel(0x01, baseAddr + ACP_AXI2AXI_ATU_CTRL);
+}
+
+int AMDMicrophoneDevice::startPDMDMA()
+{
+    UInt32 pdmEnable;
+    UInt32 pdmDMAEnable;
+    int timeout;
+
+    pdmEnable = 0x01;
+    pdmDMAEnable = 0x01;
+
+    enablePDMClock();
+    writel(pdmEnable, baseAddr + ACP_WOV_PDM_ENABLE);
+    writel(pdmDMAEnable, baseAddr + ACP_WOV_PDM_DMA_ENABLE);
+
+    timeout = 0;
+    while (++timeout < ACP_COUNTER) {
+        pdmDMAEnable = readl(baseAddr + ACP_WOV_PDM_DMA_ENABLE);
+        if ((pdmDMAEnable & 0x02) == ACP_PDM_DMA_EN_STATUS)
+            return 0;
+        IODelay(5);
+    }
+
+    return kIOReturnTimeout;
+}
+
+int AMDMicrophoneDevice::stopPDMDMA()
+{
+    UInt32 pdmEnable;
+    UInt32 pdmDMAEnable;
+    int timeout;
+
+    pdmEnable = readl(baseAddr + ACP_WOV_PDM_ENABLE);
+    pdmDMAEnable = readl(baseAddr + ACP_WOV_PDM_DMA_ENABLE);
+    if (pdmDMAEnable & 0x01) {
+        pdmDMAEnable = 0x02;
+        writel(pdmDMAEnable, baseAddr + ACP_WOV_PDM_DMA_ENABLE);
+        timeout = 0;
+        while (++timeout < ACP_COUNTER) {
+            pdmDMAEnable = readl(baseAddr + ACP_WOV_PDM_DMA_ENABLE);
+            if ((pdmDMAEnable & 0x02) == 0x00)
+                break;
+            IODelay(5);
+        }
+        if (timeout == ACP_COUNTER)
+            return kIOReturnTimeout;
+    }
+
+    if (pdmEnable == ACP_PDM_ENABLE) {
+        pdmEnable = ACP_PDM_DISABLE;
+        writel(pdmEnable, baseAddr + ACP_WOV_PDM_ENABLE);
+    }
+
+    writel(0x01, baseAddr + ACP_WOV_PDM_FIFO_FLUSH);
+
+    return 0;
+}
+
 
 IOService* AMDMicrophoneDevice::probe(IOService* provider, SInt32* score)
 {
