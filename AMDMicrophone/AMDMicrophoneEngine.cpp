@@ -103,6 +103,30 @@ Done:
     return result;
 }
 
+void AMDMicrophoneEngine::interruptOccured(OSObject* owner, IOTimerEventSource* sender)
+{
+    UInt64 thisTimeNS;
+    uint64_t time;
+    SInt64 diff;
+    UInt32 bufferPosition;
+    AMDMicrophoneEngine* audioEngine = (AMDMicrophoneEngine*)owner;
+
+    if (!audioEngine || !sender)
+        return;
+
+    bufferPosition = audioEngine->interruptCount % (kAudioInterruptHZ / 2);
+    if (bufferPosition == 0) {
+        audioEngine->takeTimeStamp();
+    }
+    audioEngine->interruptCount++;
+
+    clock_get_uptime(&time);
+    absolutetime_to_nanoseconds(time, &thisTimeNS);
+    diff = ((SInt64)audioEngine->nextTimeout - (SInt64)thisTimeNS);
+    sender->setTimeoutUS((UInt32)(((SInt64)kAudioInterruptInterval + diff) / 1000));
+    audioEngine->nextTimeout += kAudioInterruptInterval;
+}
+
 bool AMDMicrophoneEngine::init()
 {
     if (!super::init(NULL)) {
@@ -114,9 +138,9 @@ bool AMDMicrophoneEngine::init()
 
 void AMDMicrophoneEngine::free()
 {
-    if (buffer) {
-        IOFree(buffer, kAudioSampleBufferSize);
-        buffer = NULL;
+    if (interruptSource) {
+        interruptSource->release();
+        interruptSource = NULL;
     }
 
     super::free();
@@ -127,6 +151,7 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
     bool result = false;
     IOAudioSampleRate initialSampleRate;
     IOAudioStream* audioStream;
+    IOWorkLoop* workLoop;
 
     if (!super::initHardware(provider)) {
         goto Done;
@@ -137,7 +162,6 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
     initialSampleRate.whole = kAudioSampleRate;
     initialSampleRate.fraction = 0;
     setSampleRate(&initialSampleRate);
-    // Set the number of sample frames in each buffer
     setNumSampleFramesPerBuffer(kAudioBufferSampleFrames);
     setInputSampleLatency(kAudioSampleRate / kAudioInterruptHZ);
 
@@ -145,10 +169,10 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
         goto Done;
     }
 
-    buffer = (SInt16*)IOMalloc(kAudioSampleBufferSize);
-    if (!buffer) {
-        goto Done;
-    }
+    // buffer = (SInt16*)IOMalloc(kAudioSampleBufferSize);
+    // if (!buffer) {
+    //     goto Done;
+    // }
 
     audioStream = createNewAudioStream(kIOAudioStreamDirectionInput, buffer, kAudioSampleBufferSize);
     if (!audioStream) {
@@ -156,6 +180,20 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
     }
     addAudioStream(audioStream);
     audioStream->release();
+
+    workLoop = getWorkLoop();
+    if (!workLoop) {
+        goto Done;
+    }
+
+    interruptSource = IOTimerEventSource::timerEventSource(this, AMDMicrophoneEngine::interruptOccured);
+    if (!interruptSource) {
+        goto Done;
+    }
+
+    if (workLoop->addEventSource(interruptSource) != kIOReturnSuccess) {
+        goto Done;
+    }
 
     result = true;
 
@@ -165,18 +203,35 @@ Done:
 
 void AMDMicrophoneEngine::stop(IOService* provider)
 {
+    if (interruptSource) {
+        interruptSource->cancelTimeout();
+        getWorkLoop()->removeEventSource(interruptSource);
+    }
     super::stop(provider);
 }
 
 UInt32 AMDMicrophoneEngine::getCurrentSampleFrame()
 {
     LOG("getCurrentSampleFrame()\n");
-    return 0;
+
+    UInt32 periodCount = (UInt32)interruptCount % (kAudioInterruptHZ / 2);
+    UInt32 sampleFrame = periodCount * (kAudioSampleRate / kAudioInterruptHZ);
+    return sampleFrame;
 }
 
 IOReturn AMDMicrophoneEngine::performAudioEngineStart()
 {
+    UInt64 time, timeNS;
+
     LOG("performAudioEngineStart()\n");
+    interruptCount = 0;
+    takeTimeStamp(false);
+    interruptSource->setTimeoutUS(kAudioInterruptInterval / 1000);
+
+    clock_get_uptime(&time);
+    absolutetime_to_nanoseconds(time, &timeNS);
+
+    nextTimeout = timeNS + kAudioInterruptInterval;
 
     return kIOReturnSuccess;
 }
@@ -184,6 +239,7 @@ IOReturn AMDMicrophoneEngine::performAudioEngineStart()
 IOReturn AMDMicrophoneEngine::performAudioEngineStop()
 {
     LOG("performAudioEngineStop()\n");
+    interruptSource->cancelTimeout();
 
     return kIOReturnSuccess;
 }
@@ -193,9 +249,6 @@ IOReturn AMDMicrophoneEngine::performFormatChange(IOAudioStream* audioStream, co
     LOG("peformFormatChange()\n");
     IOReturn result = kIOReturnSuccess;
 
-    // Since we only allow one format, we only need to be concerned with sample rate changes
-    // In this case, we only allow 2 sample rates - 44100 & 48000, so those are the only ones
-    // that we check for
     if (newSampleRate) {
         switch (newSampleRate->whole) {
         case kAudioSampleRate:

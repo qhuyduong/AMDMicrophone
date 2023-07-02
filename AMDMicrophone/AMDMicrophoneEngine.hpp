@@ -16,9 +16,13 @@ class AMDMicrophoneEngine : public IOAudioEngine {
     OSDeclareDefaultStructors(AMDMicrophoneEngine);
 
     SInt16* buffer;
+    IOTimerEventSource* interruptSource;
+    UInt32 interruptCount;
+    SInt64 nextTimeout;
 
     IOAudioStream* createNewAudioStream(IOAudioStreamDirection direction, void* sampleBuffer, UInt32 sampleBufferSize);
     bool createControls();
+    static void interruptOccured(OSObject* owner, IOTimerEventSource* sender);
 
 public:
     bool init();
