@@ -71,6 +71,12 @@ void AMDMicrophoneDevice::interruptOccurred(OSObject* owner, IOInterruptEventSou
     // Start next DMA
 }
 
+IOBufferMemoryDescriptor* allocateDMADescriptor(UInt32 size)
+{
+
+    return IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, kIODirectionIn, size, 4096);
+}
+
 IOService* AMDMicrophoneDevice::probe(IOService* provider, SInt32* score)
 {
     pciDevice = OSDynamicCast(IOPCIDevice, provider);
@@ -94,17 +100,19 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
         goto Done;
     }
 
+    setDeviceName("AMD Digital Microphone");
+    setDeviceShortName("AMDMicrophone");
+    setManufacturerName("AMD");
+    setDeviceTransportType(kIOAudioDeviceTransportTypePCI);
+
     deviceMap = pciDevice->mapDeviceMemoryWithRegister(kIOPCIConfigBaseAddress0);
     if (!deviceMap) {
         goto Done;
     }
 
+    pciDevice->setBusMasterEnable(true);
+    pciDevice->setIOEnable(true);
     pciDevice->setMemoryEnable(true);
-
-    setDeviceName("AMD Digital Microphone");
-    setDeviceShortName("AMDMicrophone");
-    setManufacturerName("AMD");
-    setDeviceTransportType(kIOAudioDeviceTransportTypePCI);
 
     workLoop = getWorkLoop();
     if (!workLoop) {

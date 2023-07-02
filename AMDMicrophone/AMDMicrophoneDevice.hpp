@@ -23,11 +23,11 @@ class AMDMicrophoneDevice : public IOAudioDevice {
     IOInterruptEventSource* interruptSource;
     IOMemoryMap* deviceMap;
     IOPCIDevice* pciDevice;
-    IOBufferMemoryDescriptor* dmaDescriptor;
 
     bool createAudioEngine();
     int findMSIInterruptTypeIndex();
     static void interruptOccurred(OSObject* owner, IOInterruptEventSource* src, int intCount);
+    IOBufferMemoryDescriptor* allocateDMADescriptor(UInt32 size);
     IOReturn prepareDMATransfer();
 
 public:

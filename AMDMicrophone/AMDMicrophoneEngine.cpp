@@ -146,6 +146,11 @@ void AMDMicrophoneEngine::free()
         interruptSource = NULL;
     }
 
+    if (dmaDescriptor) {
+        dmaDescriptor->release();
+        dmaDescriptor = NULL;
+    }
+
     super::free();
 }
 
@@ -172,7 +177,13 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
         goto Done;
     }
 
-    audioStream = createNewAudioStream(kIOAudioStreamDirectionInput, audioDevice->dmaDescriptor->getBytesNoCopy(), kAudioSampleBufferSize);
+    dmaDescriptor = audioDevice->allocateDMADescriptor(kAudioSampleBufferSize);
+    if (!dmaDescriptor) {
+        LOG("ERROR: failed to allocate DMA buffer");
+        goto Done;
+    }
+
+    audioStream = createNewAudioStream(kIOAudioStreamDirectionInput, dmaDescriptor->getBytesNoCopy(), kAudioSampleBufferSize);
     if (!audioStream) {
         goto Done;
     }
