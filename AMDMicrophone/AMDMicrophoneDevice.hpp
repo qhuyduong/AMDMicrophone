@@ -21,14 +21,14 @@ class AMDMicrophoneDevice : public IOAudioDevice {
 
     AMDMicrophoneEngine* audioEngine;
     IOInterruptEventSource* interruptSource;
-    IOMemoryMap* deviceMap;
     IOPCIDevice* pciDevice;
+    IOMemoryMap* baseAddressMap;
+    IOVirtualAddress baseAddress;
 
     bool createAudioEngine();
     int findMSIInterruptTypeIndex();
     static void interruptOccurred(OSObject* owner, IOInterruptEventSource* src, int intCount);
     IOBufferMemoryDescriptor* allocateDMADescriptor(UInt32 size);
-    IOReturn prepareDMATransfer();
 
 public:
     IOService* probe(IOService* provider, SInt32* score) override;

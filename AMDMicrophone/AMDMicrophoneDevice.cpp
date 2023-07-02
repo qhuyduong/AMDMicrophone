@@ -105,14 +105,18 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
     setManufacturerName("AMD");
     setDeviceTransportType(kIOAudioDeviceTransportTypePCI);
 
-    deviceMap = pciDevice->mapDeviceMemoryWithRegister(kIOPCIConfigBaseAddress0);
-    if (!deviceMap) {
-        goto Done;
-    }
-
     pciDevice->setBusMasterEnable(true);
     pciDevice->setIOEnable(true);
     pciDevice->setMemoryEnable(true);
+
+    baseAddressMap = pciDevice->mapDeviceMemoryWithRegister(kIOPCIConfigBaseAddress0);
+    if (!baseAddressMap) {
+        goto Done;
+    }
+    baseAddress = baseAddressMap->getVirtualAddress();
+    if (!baseAddress) {
+        goto Done;
+    }
 
     workLoop = getWorkLoop();
     if (!workLoop) {
@@ -135,10 +139,7 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
 
 Done:
     if (!result) {
-        if (deviceMap) {
-            deviceMap->release();
-            deviceMap = NULL;
-        }
+        free();
     }
 
     return result;
@@ -146,9 +147,9 @@ Done:
 
 void AMDMicrophoneDevice::free()
 {
-    if (deviceMap) {
-        deviceMap->release();
-        deviceMap = NULL;
+    if (baseAddressMap) {
+        baseAddressMap->release();
+        baseAddressMap = NULL;
     }
 
     super::free();
