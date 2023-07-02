@@ -71,7 +71,7 @@ void AMDMicrophoneDevice::interruptOccurred(OSObject* owner, IOInterruptEventSou
     // Start next DMA
 }
 
-IOBufferMemoryDescriptor* allocateDMADescriptor(UInt32 size)
+IOBufferMemoryDescriptor* AMDMicrophoneDevice::allocateDMADescriptor(UInt32 size)
 {
 
     return IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, kIODirectionIn, size, 4096);
