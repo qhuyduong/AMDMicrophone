@@ -76,11 +76,6 @@ void AMDMicrophoneDevice::interruptOccurred(OSObject* owner, IOInterruptEventSou
     }
 }
 
-IOBufferMemoryDescriptor* AMDMicrophoneDevice::allocateDMADescriptor(UInt32 size)
-{
-    return IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, kIODirectionIn, size, 4096);
-}
-
 void AMDMicrophoneDevice::disableInterrupts()
 {
     writel(ACP_EXT_INTR_STAT_CLEAR_MASK, baseAddr + ACP_EXTERNAL_INTR_STAT);
@@ -308,8 +303,15 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
     if (!baseAddrMap) {
         goto Done;
     }
+
     baseAddr = baseAddrMap->getVirtualAddress();
     if (!baseAddr) {
+        goto Done;
+    }
+
+    dmaDescriptor = IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, kIODirectionIn, kAudioSampleBufferSize);
+    if (!dmaDescriptor) {
+        LOG("ERROR: failed to allocate DMA buffer");
         goto Done;
     }
 
@@ -324,7 +326,6 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
         provider,
         findMSIInterruptTypeIndex()
     );
-
     if (workLoop->addEventSource(interruptSource) != kIOReturnSuccess) {
         goto Done;
     }
@@ -337,6 +338,7 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
         LOG("power on failed\n");
         goto Done;
     }
+
     writel(0x01, baseAddr + ACP_CONTROL);
     if (reset() != kIOReturnSuccess) {
         LOG("reset failed\n");
@@ -371,6 +373,11 @@ void AMDMicrophoneDevice::free()
     if (baseAddrMap) {
         baseAddrMap->release();
         baseAddrMap = NULL;
+    }
+
+    if (dmaDescriptor) {
+        dmaDescriptor->release();
+        dmaDescriptor = NULL;
     }
 
     super::free();

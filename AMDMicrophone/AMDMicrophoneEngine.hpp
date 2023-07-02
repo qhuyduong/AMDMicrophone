@@ -17,7 +17,6 @@ class AMDMicrophoneEngine : public IOAudioEngine {
     OSDeclareDefaultStructors(AMDMicrophoneEngine);
 
     AMDMicrophoneDevice* audioDevice;
-    IOBufferMemoryDescriptor* dmaDescriptor;
     IOTimerEventSource* interruptSource;
     SInt64 nextTimeout;
     UInt32 interruptCount;

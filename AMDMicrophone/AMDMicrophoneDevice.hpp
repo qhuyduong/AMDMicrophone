@@ -76,11 +76,11 @@ class AMDMicrophoneDevice : public IOAudioDevice {
     IOPCIDevice* pciDevice;
     IOMemoryMap* baseAddrMap;
     IOVirtualAddress baseAddr;
+    IOBufferMemoryDescriptor* dmaDescriptor;
 
     bool createAudioEngine();
     int findMSIInterruptTypeIndex();
     static void interruptOccurred(OSObject* owner, IOInterruptEventSource* src, int intCount);
-    IOBufferMemoryDescriptor* allocateDMADescriptor(UInt32 size);
 
     void disableInterrupts();
     void enableInterrupts();
@@ -89,6 +89,7 @@ class AMDMicrophoneDevice : public IOAudioDevice {
     int reset();
 
     bool checkPDMDMAStatus();
+    void configDMA();
     void disablePDMInterrupts();
     void enablePDMClock();
     void enablePDMInterrupts();

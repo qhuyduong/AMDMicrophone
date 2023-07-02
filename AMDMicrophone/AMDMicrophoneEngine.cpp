@@ -18,13 +18,6 @@
 
 #define super IOAudioEngine
 
-#define kAudioSampleRate         48000
-#define kAudioNumChannels        2
-#define kAudioSampleDepth        24
-#define kAudioSampleWidth        32
-#define kAudioBufferSampleFrames kAudioSampleRate / 2
-#define kAudioSampleBufferSize   (kAudioBufferSampleFrames * kAudioNumChannels * (kAudioSampleDepth / 8))
-
 #define kAudioInterruptInterval 10000000 // 10ms = (1000 ms / 100 hz).
 #define kAudioInterruptHZ       100
 
@@ -150,11 +143,6 @@ void AMDMicrophoneEngine::free()
         interruptSource = NULL;
     }
 
-    if (dmaDescriptor) {
-        dmaDescriptor->release();
-        dmaDescriptor = NULL;
-    }
-
     super::free();
 }
 
@@ -181,13 +169,7 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
         goto Done;
     }
 
-    dmaDescriptor = audioDevice->allocateDMADescriptor(kAudioSampleBufferSize);
-    if (!dmaDescriptor) {
-        LOG("ERROR: failed to allocate DMA buffer");
-        goto Done;
-    }
-
-    audioStream = createNewAudioStream(kIOAudioStreamDirectionInput, dmaDescriptor->getBytesNoCopy(), kAudioSampleBufferSize);
+    audioStream = createNewAudioStream(kIOAudioStreamDirectionInput, audioDevice->dmaDescriptor->getBytesNoCopy(), kAudioSampleBufferSize);
     if (!audioStream) {
         goto Done;
     }
