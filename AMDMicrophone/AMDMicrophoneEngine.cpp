@@ -171,15 +171,14 @@ IOReturn AMDMicrophoneEngine::performAudioEngineStart()
 
     takeTimeStamp(false);
 
-    audioDevice->enablePDMInterrupts();
-    audioDevice->configDMA();
     audioDevice->initPDMRingBuffer(ACP_MEM_WINDOW_START, MAX_BUFFER_SIZE, CAPTURE_MAX_PERIOD_SIZE);
-    writel(0, audioDevice->baseAddr + ACP_WOV_PDM_NO_OF_CHANNELS);
-    writel(ACP_PDM_DECIMATION_FACTOR, audioDevice->baseAddr + ACP_WOV_PDM_DECIMATION_FACTOR);
+    audioDevice->writel(0x0, ACP_WOV_PDM_NO_OF_CHANNELS);
+    audioDevice->writel(ACP_PDM_DECIMATION_FACTOR, ACP_WOV_PDM_DECIMATION_FACTOR);
     pdmStatus = audioDevice->checkPDMDMAStatus();
     if (!pdmStatus) {
         audioDevice->startPDMDMA();
     }
+    audioDevice->enableInterrupt();
 
     return kIOReturnSuccess;
 }
@@ -190,6 +189,7 @@ IOReturn AMDMicrophoneEngine::performAudioEngineStop()
 
     LOG("performAudioEngineStop()\n");
 
+    audioDevice->disableInterrupt();
     pdmStatus = audioDevice->checkPDMDMAStatus();
     if (pdmStatus) {
         audioDevice->stopPDMDMA();
