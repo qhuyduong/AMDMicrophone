@@ -70,6 +70,8 @@ void AMDMicrophoneDevice::interruptOccurred(OSObject* owner, IOInterruptEventSou
 
     UInt32 val;
 
+    me->audioEngine->takeTimeStamp();
+
     val = readl(me->baseAddr + ACP_EXTERNAL_INTR_STAT);
     if (val & BIT(ACP_PDM_DMA_STAT)) {
         writel(BIT(ACP_PDM_DMA_STAT), me->baseAddr + ACP_EXTERNAL_INTR_STAT);
@@ -200,10 +202,11 @@ void AMDMicrophoneDevice::enablePDMInterrupts()
     writel(extIntCtrl, baseAddr + ACP_EXTERNAL_INTR_CNTL);
 }
 
-void AMDMicrophoneDevice::initPDMRingBuffer(UInt32 physAddr, UInt32 bufferSize)
+void AMDMicrophoneDevice::initPDMRingBuffer(UInt32 physAddr, UInt32 bufferSize, UInt32 watermarkSize)
 {
     writel(physAddr, baseAddr + ACP_WOV_RX_RINGBUFADDR);
     writel(bufferSize, baseAddr + ACP_WOV_RX_RINGBUFSIZE);
+    writel(watermarkSize, baseAddr + ACP_WOV_RX_INTR_WATERMARK_SIZE);
     writel(0x01, baseAddr + ACP_AXI2AXI_ATU_CTRL);
 }
 
@@ -333,7 +336,7 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
         goto Done;
     }
 
-    dmaDescriptor = IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, kIODirectionIn, kAudioSampleBufferSize);
+    dmaDescriptor = IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, kIODirectionIn, MAX_BUFFER_SIZE);
     if (!dmaDescriptor) {
         LOG("ERROR: failed to allocate DMA buffer");
         goto Done;

@@ -59,6 +59,10 @@
 #define BIT(n)      (1UL << (n))
 #define cpu_relax() asm volatile("rep; nop")
 
+#define CAPTURE_MAX_NUM_PERIODS 4
+#define CAPTURE_MAX_PERIOD_SIZE 8192
+#define MAX_BUFFER_SIZE         (CAPTURE_MAX_PERIOD_SIZE * CAPTURE_MAX_NUM_PERIODS)
+
 static inline UInt32 readl(IOVirtualAddress addr)
 {
     return *(const volatile UInt32*)(addr - ACP_PHY_BASE_ADDRESS);
@@ -100,7 +104,7 @@ class AMDMicrophoneDevice : public IOAudioDevice {
     void disablePDMInterrupts();
     void enablePDMClock();
     void enablePDMInterrupts();
-    void initPDMRingBuffer(UInt32 physAddr, UInt32 bufferSize);
+    void initPDMRingBuffer(UInt32 physAddr, UInt32 bufferSize, UInt32 watermarkSize);
     int startPDMDMA();
     int stopPDMDMA();
 

@@ -10,7 +10,6 @@
 #include "AMDMicrophoneCommon.hpp"
 #include "AMDMicrophoneDevice.hpp"
 
-#include <IOKit/IOTimerEventSource.h>
 #include <IOKit/audio/IOAudioDefines.h>
 #include <IOKit/audio/IOAudioDevice.h>
 #include <IOKit/audio/IOAudioLevelControl.h>
@@ -18,8 +17,10 @@
 
 #define super IOAudioEngine
 
-#define kAudioInterruptInterval 10000000 // 10ms = (1000 ms / 100 hz).
-#define kAudioInterruptHZ       100
+#define kAudioSampleRate  48000
+#define kAudioNumChannels 2
+#define kAudioSampleDepth 24
+#define kAudioSampleWidth 32
 
 OSDefineMetaClassAndStructors(AMDMicrophoneEngine, IOAudioEngine);
 
@@ -101,30 +102,6 @@ Done:
     return result;
 }
 
-void AMDMicrophoneEngine::interruptOccured(OSObject* owner, IOTimerEventSource* sender)
-{
-    UInt64 thisTimeNS;
-    uint64_t time;
-    SInt64 diff;
-    UInt32 bufferPosition;
-    AMDMicrophoneEngine* audioEngine = (AMDMicrophoneEngine*)owner;
-
-    if (!audioEngine || !sender)
-        return;
-
-    bufferPosition = audioEngine->interruptCount % (kAudioInterruptHZ / 2);
-    if (bufferPosition == 0) {
-        audioEngine->takeTimeStamp();
-    }
-    audioEngine->interruptCount++;
-
-    clock_get_uptime(&time);
-    absolutetime_to_nanoseconds(time, &thisTimeNS);
-    diff = ((SInt64)audioEngine->nextTimeout - (SInt64)thisTimeNS);
-    sender->setTimeoutUS((UInt32)(((SInt64)kAudioInterruptInterval + diff) / 1000));
-    audioEngine->nextTimeout += kAudioInterruptInterval;
-}
-
 bool AMDMicrophoneEngine::init(AMDMicrophoneDevice* device)
 {
     if (!super::init(NULL)) {
@@ -138,11 +115,6 @@ bool AMDMicrophoneEngine::init(AMDMicrophoneDevice* device)
 
 void AMDMicrophoneEngine::free()
 {
-    if (interruptSource) {
-        interruptSource->release();
-        interruptSource = NULL;
-    }
-
     super::free();
 }
 
@@ -151,7 +123,6 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
     bool result = false;
     IOAudioSampleRate initialSampleRate;
     IOAudioStream* audioStream;
-    IOWorkLoop* workLoop;
 
     if (!super::initHardware(provider)) {
         goto Done;
@@ -162,33 +133,17 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
     initialSampleRate.whole = kAudioSampleRate;
     initialSampleRate.fraction = 0;
     setSampleRate(&initialSampleRate);
-    setNumSampleFramesPerBuffer(kAudioBufferSampleFrames);
-    setInputSampleLatency(kAudioSampleRate / kAudioInterruptHZ);
 
     if (!createControls()) {
         goto Done;
     }
 
-    audioStream = createNewAudioStream(kIOAudioStreamDirectionInput, audioDevice->dmaDescriptor->getBytesNoCopy(), kAudioSampleBufferSize);
+    audioStream = createNewAudioStream(kIOAudioStreamDirectionInput, audioDevice->dmaDescriptor->getBytesNoCopy(), MAX_BUFFER_SIZE);
     if (!audioStream) {
         goto Done;
     }
     addAudioStream(audioStream);
     audioStream->release();
-
-    workLoop = getWorkLoop();
-    if (!workLoop) {
-        goto Done;
-    }
-
-    interruptSource = IOTimerEventSource::timerEventSource(this, AMDMicrophoneEngine::interruptOccured);
-    if (!interruptSource) {
-        goto Done;
-    }
-
-    if (workLoop->addEventSource(interruptSource) != kIOReturnSuccess) {
-        goto Done;
-    }
 
     result = true;
 
@@ -198,10 +153,6 @@ Done:
 
 void AMDMicrophoneEngine::stop(IOService* provider)
 {
-    if (interruptSource) {
-        interruptSource->cancelTimeout();
-        getWorkLoop()->removeEventSource(interruptSource);
-    }
     super::stop(provider);
 }
 
@@ -209,29 +160,20 @@ UInt32 AMDMicrophoneEngine::getCurrentSampleFrame()
 {
     LOG("getCurrentSampleFrame()\n");
 
-    UInt32 periodCount = (UInt32)interruptCount % (kAudioInterruptHZ / 2);
-    UInt32 sampleFrame = periodCount * (kAudioSampleRate / kAudioInterruptHZ);
-    return sampleFrame;
+    return 0;
 }
 
 IOReturn AMDMicrophoneEngine::performAudioEngineStart()
 {
-    UInt64 time, timeNS;
     bool pdmStatus;
 
     LOG("performAudioEngineStart()\n");
-    interruptCount = 0;
+
     takeTimeStamp(false);
-    interruptSource->setTimeoutUS(kAudioInterruptInterval / 1000);
-
-    clock_get_uptime(&time);
-    absolutetime_to_nanoseconds(time, &timeNS);
-
-    nextTimeout = timeNS + kAudioInterruptInterval;
 
     audioDevice->enablePDMInterrupts();
     audioDevice->configDMA();
-    audioDevice->initPDMRingBuffer(ACP_MEM_WINDOW_START, kAudioSampleBufferSize);
+    audioDevice->initPDMRingBuffer(ACP_MEM_WINDOW_START, MAX_BUFFER_SIZE, CAPTURE_MAX_PERIOD_SIZE);
     writel(0, audioDevice->baseAddr + ACP_WOV_PDM_NO_OF_CHANNELS);
     writel(ACP_PDM_DECIMATION_FACTOR, audioDevice->baseAddr + ACP_WOV_PDM_DECIMATION_FACTOR);
     pdmStatus = audioDevice->checkPDMDMAStatus();
@@ -247,7 +189,6 @@ IOReturn AMDMicrophoneEngine::performAudioEngineStop()
     bool pdmStatus;
 
     LOG("performAudioEngineStop()\n");
-    interruptSource->cancelTimeout();
 
     pdmStatus = audioDevice->checkPDMDMAStatus();
     if (pdmStatus) {
@@ -277,45 +218,4 @@ IOReturn AMDMicrophoneEngine::performFormatChange(
     }
 
     return result;
-}
-
-IOReturn AMDMicrophoneEngine::convertInputSamples(
-    const void* sampleBuf, void* destBuf, UInt32 firstSampleFrame, UInt32 numSampleFrames,
-    const IOAudioStreamFormat* streamFormat, IOAudioStream* audioStream
-)
-{
-    UInt32 numSamplesLeft;
-    float* floatDestBuf;
-    SInt16* inputBuf;
-
-    // Start by casting the destination buffer to a float *
-    floatDestBuf = (float*)destBuf;
-    // Determine the starting point for our input conversion
-    inputBuf = &(((SInt16*)sampleBuf)[firstSampleFrame * streamFormat->fNumChannels]);
-
-    // Calculate the number of actual samples to convert
-    numSamplesLeft = numSampleFrames * streamFormat->fNumChannels;
-
-    // Loop through each sample and scale and convert them
-    while (numSamplesLeft > 0) {
-        SInt16 inputSample;
-
-        // Fetch the SInt16 input sample
-        inputSample = *inputBuf;
-
-        // Scale that sample to a range of -1.0 to 1.0, convert to float and store in the destination buffer
-        // at the proper location
-        if (inputSample >= 0) {
-            *floatDestBuf = inputSample / 32767.0f;
-        } else {
-            *floatDestBuf = inputSample / 32768.0f;
-        }
-
-        // Move on to the next sample
-        ++inputBuf;
-        ++floatDestBuf;
-        --numSamplesLeft;
-    }
-
-    return kIOReturnSuccess;
 }
