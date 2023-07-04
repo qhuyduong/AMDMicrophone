@@ -30,6 +30,11 @@ T.B.D
 1. Disable SIP.
 2. Download the kext from Github Actions.
 3. Copy it to `/Library/Extensions/`.
+
+```console
+sudo cp -r AMDMicrophone.kext /Library/Extensions/
+```
+
 4. When notified, allow it in `Security & Privacy settings` and reboot.
 
 <p align="center">
