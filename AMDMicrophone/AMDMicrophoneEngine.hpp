@@ -20,6 +20,7 @@
 #define SAMPLE_WIDTH 32
 #define FRAME_SIZE   (NUM_CHANNELS * SAMPLE_WIDTH / 8)
 #define NUM_FRAMES   (BUFFER_SIZE / FRAME_SIZE)
+#define MAX_VOLUME   65535
 
 class AMDMicrophoneDevice;
 
@@ -27,7 +28,7 @@ class AMDMicrophoneEngine : public IOAudioEngine {
     OSDeclareDefaultStructors(AMDMicrophoneEngine);
 
     AMDMicrophoneDevice* audioDevice;
-    SInt32 gain = 32767;
+    UInt32 volume = MAX_VOLUME;
 
     bool createControls();
     IOAudioStream* createNewAudioStream(

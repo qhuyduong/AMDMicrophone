@@ -25,9 +25,9 @@ bool AMDMicrophoneEngine::createControls()
     IOAudioControl* control;
 
     control = IOAudioLevelControl::createVolumeControl(
-        gain,
+        volume,
         0,
-        65535,
+        MAX_VOLUME,
         (-22 << 16) + (32768),
         0,
         kIOAudioControlChannelIDAll,
@@ -92,7 +92,7 @@ IOReturn AMDMicrophoneEngine::gainChangeHandler(
     if (!that)
         return kIOReturnBadArgument;
 
-    that->gain = newValue;
+    that->volume = newValue;
 
     return kIOReturnSuccess;
 }
@@ -166,7 +166,7 @@ IOReturn AMDMicrophoneEngine::convertInputSamples(
 
     inputBuf32 = &(((SInt32*)sampleBuf)[firstSample]);
     while (numSamplesLeft-- > 0)
-        *(floatDestBuf++) = (float)*(inputBuf32++) * kOneOverMaxSInt32Value * gain / 65535;
+        *(floatDestBuf++) = (float)*(inputBuf32++) * kOneOverMaxSInt32Value * volume / MAX_VOLUME;
 
     return kIOReturnSuccess;
 }
