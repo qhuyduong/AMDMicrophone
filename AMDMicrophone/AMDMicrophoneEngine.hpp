@@ -14,12 +14,12 @@
 #define PERIOD_SIZE 8192
 #define BUFFER_SIZE (PERIOD_SIZE * NUM_PERIODS)
 
-#define kAudioSampleRate      48000
-#define kAudioNumChannels     2
-#define kAudioSampleDepth     32
-#define kAudioSampleWidth     32
-#define kAudioSampleSize      (kAudioNumChannels * (kAudioSampleWidth / 8))
-#define kAudioNumSampleFrames (BUFFER_SIZE / kAudioSampleSize)
+#define SAMPLE_RATE  48000
+#define NUM_CHANNELS 2
+#define SAMPLE_DEPTH 32
+#define SAMPLE_WIDTH 32
+#define FRAME_SIZE   (NUM_CHANNELS * SAMPLE_WIDTH / 8)
+#define NUM_FRAMES   (BUFFER_SIZE / FRAME_SIZE)
 
 class AMDMicrophoneDevice;
 

@@ -32,11 +32,11 @@ IOAudioStream* AMDMicrophoneEngine::createNewAudioStream(
         } else {
             IOAudioSampleRate rate;
             IOAudioStreamFormat format = {
-                kAudioNumChannels,
+                NUM_CHANNELS,
                 kIOAudioStreamSampleFormatLinearPCM,
                 kIOAudioStreamNumericRepresentationSignedInt,
-                kAudioSampleDepth,
-                kAudioSampleWidth,
+                SAMPLE_DEPTH,
+                SAMPLE_WIDTH,
                 kIOAudioStreamAlignmentLowByte,
                 kIOAudioStreamByteOrderLittleEndian,
                 true,
@@ -45,7 +45,7 @@ IOAudioStream* AMDMicrophoneEngine::createNewAudioStream(
 
             audioStream->setSampleBuffer(sampleBuffer, sampleBufferSize);
             rate.fraction = 0;
-            rate.whole = kAudioSampleRate;
+            rate.whole = SAMPLE_RATE;
             audioStream->addAvailableFormat(&format, &rate, &rate);
             audioStream->setFormat(&format);
         }
@@ -125,10 +125,10 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
 
     setDescription("AMD Digital Microphone");
 
-    initialSampleRate.whole = kAudioSampleRate;
+    initialSampleRate.whole = SAMPLE_RATE;
     initialSampleRate.fraction = 0;
     setSampleRate(&initialSampleRate);
-    setNumSampleFramesPerBuffer(kAudioNumSampleFrames);
+    setNumSampleFramesPerBuffer(NUM_FRAMES);
 
     if (!createControls()) {
         goto Done;
@@ -176,7 +176,7 @@ IOReturn AMDMicrophoneEngine::convertInputSamples(
 
 UInt32 AMDMicrophoneEngine::getCurrentSampleFrame()
 {
-    return (audioDevice->periodsCount * PERIOD_SIZE) / kAudioSampleSize;
+    return (audioDevice->periodsCount * PERIOD_SIZE) / FRAME_SIZE;
 }
 
 IOReturn AMDMicrophoneEngine::performAudioEngineStart()
@@ -208,12 +208,11 @@ IOReturn AMDMicrophoneEngine::performFormatChange(
 
     if (newSampleRate) {
         switch (newSampleRate->whole) {
-        case kAudioSampleRate:
+        case SAMPLE_RATE:
             result = kIOReturnSuccess;
             break;
         default:
             result = kIOReturnUnsupported;
-            LOG("Internal Error - unknown sample rate selected.\n");
             break;
         }
     }
