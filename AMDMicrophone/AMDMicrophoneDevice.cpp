@@ -109,9 +109,8 @@ IOReturn AMDMicrophoneDevice::powerOn()
     if (val == 0)
         return val;
 
-    if ((val & ACP_PGFSM_STATUS_MASK) != ACP_POWER_ON_IN_PROGRESS) {
+    if ((val & ACP_PGFSM_STATUS_MASK) != ACP_POWER_ON_IN_PROGRESS)
         writel(ACP_PGFSM_CNTL_POWER_ON_MASK, ACP_PGFSM_CONTROL);
-    }
 
     timeout = 0;
     while (++timeout < 500) {
@@ -188,9 +187,8 @@ IOReturn AMDMicrophoneDevice::stopDMA()
     }
 
     val = readl(ACP_WOV_PDM_ENABLE);
-    if (val == 0x1) {
+    if (val == 0x1)
         writel(0x0, ACP_WOV_PDM_ENABLE);
-    }
 
     writel(0x1, ACP_WOV_PDM_FIFO_FLUSH);
 
@@ -202,17 +200,14 @@ bool AMDMicrophoneDevice::createAudioEngine()
     bool result = false;
 
     audioEngine = new AMDMicrophoneEngine;
-    if (!audioEngine) {
+    if (!audioEngine)
         goto Done;
-    }
 
-    if (!audioEngine->init(this)) {
+    if (!audioEngine->init(this))
         goto Done;
-    }
 
-    if (activateAudioEngine(audioEngine) != kIOReturnSuccess) {
+    if (activateAudioEngine(audioEngine) != kIOReturnSuccess)
         goto Done;
-    }
 
     result = true;
 
@@ -243,15 +238,14 @@ int AMDMicrophoneDevice::findMSIInterruptTypeIndex()
 
 void AMDMicrophoneDevice::interruptOccurred(OSObject* owner, IOInterruptEventSource* src, int intCount)
 {
-    AMDMicrophoneDevice* me = (AMDMicrophoneDevice*)owner;
+    AMDMicrophoneDevice* that = (AMDMicrophoneDevice*)owner;
 
-    me->writel(ACP_EXT_INTR_STAT_CLEAR_MASK, ACP_EXTERNAL_INTR_STAT);
+    that->writel(ACP_EXT_INTR_STAT_CLEAR_MASK, ACP_EXTERNAL_INTR_STAT);
 
-    if (me->periodsCount % NUM_PERIODS == 0) {
-        me->audioEngine->takeTimeStamp(true);
-    }
+    if (that->periodsCount % NUM_PERIODS == 0)
+        that->audioEngine->takeTimeStamp(true);
 
-    me->periodsCount++;
+    that->periodsCount++;
 }
 
 IOService* AMDMicrophoneDevice::probe(IOService* provider, SInt32* score)
@@ -260,9 +254,9 @@ IOService* AMDMicrophoneDevice::probe(IOService* provider, SInt32* score)
 
     UInt8 revisionId = pciDevice->configRead8(kIOPCIConfigRevisionID);
 
-    if (revisionId == 0x1) {
+    if (revisionId == 0x1)
         LOG("AMD Digital Microphone for Renoir\n");
-    } else {
+    else {
         LOG("Only Renoir is supported at the moment\n");
         return NULL;
     }
@@ -289,24 +283,20 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
     pciDevice->setMemoryEnable(true);
 
     baseAddrMap = pciDevice->mapDeviceMemoryWithRegister(kIOPCIConfigBaseAddress0);
-    if (!baseAddrMap) {
+    if (!baseAddrMap)
         goto Done;
-    }
 
     baseAddr = baseAddrMap->getVirtualAddress();
-    if (!baseAddr) {
+    if (!baseAddr)
         goto Done;
-    }
 
     dmaDescriptor = IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, kIODirectionIn, BUFFER_SIZE);
-    if (!dmaDescriptor) {
+    if (!dmaDescriptor)
         goto Done;
-    }
 
     workLoop = getWorkLoop();
-    if (!workLoop) {
+    if (!workLoop)
         goto Done;
-    }
 
     irqEventSource = IOInterruptEventSource::interruptEventSource(
         this,
@@ -314,23 +304,21 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
         provider,
         findMSIInterruptTypeIndex()
     );
-    if (workLoop->addEventSource(irqEventSource) != kIOReturnSuccess) {
+    if (workLoop->addEventSource(irqEventSource) != kIOReturnSuccess)
         goto Done;
-    }
+
     irqEventSource->enable();
 
-    if (!createAudioEngine()) {
+    if (!createAudioEngine())
         goto Done;
-    }
 
-    if (powerOn() != kIOReturnSuccess) {
+    if (powerOn() != kIOReturnSuccess)
         goto Done;
-    }
 
     writel(0x1, ACP_CONTROL);
-    if (reset() != kIOReturnSuccess) {
+    if (reset() != kIOReturnSuccess)
         goto Done;
-    }
+
     writel(0x3, ACP_CLKMUX_SEL);
 
     configDMA();
@@ -338,9 +326,8 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
     result = true;
 
 Done:
-    if (!result) {
+    if (!result)
         free();
-    }
 
     return result;
 }
@@ -348,9 +335,9 @@ Done:
 void AMDMicrophoneDevice::stop(IOService* provider)
 {
     irqEventSource->disable();
-    if (reset() != kIOReturnSuccess) {
+    if (reset() != kIOReturnSuccess)
         return;
-    }
+
     writel(0x0, ACP_CLKMUX_SEL);
     writel(0x0, ACP_CONTROL);
 }

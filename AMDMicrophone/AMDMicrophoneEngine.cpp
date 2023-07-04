@@ -19,6 +19,35 @@
 
 OSDefineMetaClassAndStructors(AMDMicrophoneEngine, IOAudioEngine);
 
+bool AMDMicrophoneEngine::createControls()
+{
+    bool result = false;
+    IOAudioControl* control;
+
+    control = IOAudioLevelControl::createVolumeControl(
+        32768,
+        0,
+        65535,
+        (-22 << 16) + (32768),
+        0,
+        kIOAudioControlChannelIDAll,
+        kIOAudioControlChannelNameAll,
+        0,
+        kIOAudioControlUsageInput
+    );
+    if (!control)
+        goto Done;
+
+    control->setValueChangeHandler((IOAudioControl::IntValueChangeHandler)gainChangeHandler, this);
+    addDefaultAudioControl(control);
+    control->release();
+
+    result = true;
+
+Done:
+    return result;
+}
+
 IOAudioStream* AMDMicrophoneEngine::createNewAudioStream(
     IOAudioStreamDirection direction, void* sampleBuffer, UInt32 sampleBufferSize
 )
@@ -27,9 +56,9 @@ IOAudioStream* AMDMicrophoneEngine::createNewAudioStream(
 
     audioStream = new IOAudioStream;
     if (audioStream) {
-        if (!audioStream->initWithAudioEngine(this, direction, 1)) {
+        if (!audioStream->initWithAudioEngine(this, direction, 1))
             audioStream->release();
-        } else {
+        else {
             IOAudioSampleRate rate;
             IOAudioStreamFormat format = {
                 NUM_CHANNELS,
@@ -54,54 +83,24 @@ IOAudioStream* AMDMicrophoneEngine::createNewAudioStream(
     return audioStream;
 }
 
-bool AMDMicrophoneEngine::createControls()
+IOReturn AMDMicrophoneEngine::gainChangeHandler(
+    IOService* target, IOAudioControl* gainControl, SInt32 oldValue, SInt32 newValue
+)
 {
-    bool result = false;
-    IOAudioControl* control;
+    AMDMicrophoneEngine* that = (AMDMicrophoneEngine*)target;
 
-    control = IOAudioLevelControl::createVolumeControl(
-        65535,
-        0,
-        65535,
-        0,
-        (22 << 16) + (32768),
-        kIOAudioControlChannelIDAll,
-        kIOAudioControlChannelNameAll,
-        0,
-        kIOAudioControlUsageInput
-    );
-    if (!control) {
-        goto Done;
-    }
-    addDefaultAudioControl(control);
-    control->release();
+    if (!that)
+        return kIOReturnBadArgument;
 
-    control = IOAudioToggleControl::createMuteControl(
-        false,
-        kIOAudioControlChannelIDAll,
-        kIOAudioControlChannelNameAll,
-        0,
-        kIOAudioControlUsageInput
-    );
+    that->gain = newValue;
 
-    if (!control) {
-        goto Done;
-    }
-
-    addDefaultAudioControl(control);
-    control->release();
-
-    result = true;
-
-Done:
-    return result;
+    return kIOReturnSuccess;
 }
 
 bool AMDMicrophoneEngine::init(AMDMicrophoneDevice* device)
 {
-    if (!super::init(NULL)) {
+    if (!super::init(NULL))
         return false;
-    }
 
     audioDevice = device;
 
@@ -119,9 +118,8 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
     IOAudioSampleRate initialSampleRate;
     IOAudioStream* audioStream;
 
-    if (!super::initHardware(provider)) {
+    if (!super::initHardware(provider))
         goto Done;
-    }
 
     setDescription("AMD Digital Microphone");
 
@@ -130,14 +128,14 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
     setSampleRate(&initialSampleRate);
     setNumSampleFramesPerBuffer(NUM_FRAMES);
 
-    if (!createControls()) {
+    if (!createControls())
         goto Done;
-    }
 
-    audioStream = createNewAudioStream(kIOAudioStreamDirectionInput, audioDevice->dmaDescriptor->getBytesNoCopy(), BUFFER_SIZE);
-    if (!audioStream) {
+    audioStream = createNewAudioStream(
+        kIOAudioStreamDirectionInput, audioDevice->dmaDescriptor->getBytesNoCopy(), BUFFER_SIZE
+    );
+    if (!audioStream)
         goto Done;
-    }
     addAudioStream(audioStream);
     audioStream->release();
 
@@ -167,9 +165,8 @@ IOReturn AMDMicrophoneEngine::convertInputSamples(
     numSamplesLeft = numSampleFrames * streamFormat->fNumChannels;
 
     inputBuf32 = &(((SInt32*)sampleBuf)[firstSample]);
-    while (numSamplesLeft-- > 0) {
-        *(floatDestBuf++) = (float)*(inputBuf32++) * kOneOverMaxSInt32Value;
-    }
+    while (numSamplesLeft-- > 0)
+        *(floatDestBuf++) = (float)*(inputBuf32++) * kOneOverMaxSInt32Value * gain / 65535;
 
     return kIOReturnSuccess;
 }

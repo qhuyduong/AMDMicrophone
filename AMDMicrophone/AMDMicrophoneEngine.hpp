@@ -27,11 +27,15 @@ class AMDMicrophoneEngine : public IOAudioEngine {
     OSDeclareDefaultStructors(AMDMicrophoneEngine);
 
     AMDMicrophoneDevice* audioDevice;
+    SInt32 gain;
 
+    bool createControls();
     IOAudioStream* createNewAudioStream(
         IOAudioStreamDirection direction, void* sampleBuffer, UInt32 sampleBufferSize
     );
-    bool createControls();
+    static IOReturn gainChangeHandler(
+        IOService* target, IOAudioControl* gainControl, SInt32 oldValue, SInt32 newValue
+    );
 
 public:
     bool init(AMDMicrophoneDevice* device);
