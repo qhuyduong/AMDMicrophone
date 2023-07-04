@@ -40,6 +40,10 @@ public:
     bool initHardware(IOService* provider) override;
     void stop(IOService* provider) override;
 
+    IOReturn convertInputSamples(
+        const void* sampleBuf, void* destBuf, UInt32 firstSampleFrame, UInt32 numSampleFrames,
+        const IOAudioStreamFormat* streamFormat, IOAudioStream* audioStream
+    );
     UInt32 getCurrentSampleFrame() override;
     IOReturn performAudioEngineStart() override;
     IOReturn performAudioEngineStop() override;
