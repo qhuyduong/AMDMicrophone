@@ -27,59 +27,88 @@ void AMDMicrophoneDevice::writel(UInt32 val, UInt32 reg)
     *(volatile UInt32*)(baseAddr + reg - ACP_PHY_BASE_ADDRESS) = val;
 }
 
-bool AMDMicrophoneDevice::createAudioEngine()
+bool AMDMicrophoneDevice::checkDMAStatus()
 {
-    bool result = false;
+    bool pdmDMAStatus;
+    UInt32 pdmEnable, pdmDMAEnable;
 
-    LOG("createAudioEngine()\n");
-
-    audioEngine = new AMDMicrophoneEngine;
-    if (!audioEngine) {
-        goto Done;
-    }
-
-    if (!audioEngine->init(this)) {
-        goto Done;
-    }
-
-    if (activateAudioEngine(audioEngine) != kIOReturnSuccess) {
-        LOG("ERROR activateAudioEngine failed\n");
-        goto Done;
-    }
-
-    result = true;
-
-Done:
-    if (audioEngine != NULL) {
-        audioEngine->release();
-    }
-
-    return result;
+    pdmDMAStatus = false;
+    pdmEnable = readl(ACP_WOV_PDM_ENABLE);
+    pdmDMAEnable = readl(ACP_WOV_PDM_DMA_ENABLE);
+    if ((pdmEnable & ACP_PDM_ENABLE) && (pdmDMAEnable & ACP_PDM_DMA_EN_STATUS))
+        pdmDMAStatus = true;
+    return pdmDMAStatus;
 }
 
-int AMDMicrophoneDevice::findMSIInterruptTypeIndex()
+void AMDMicrophoneDevice::configDMA()
 {
-    IOReturn ret;
-    int index, source = 0;
-    for (index = 0;; index++) {
-        int interruptType;
-        ret = pciDevice->getInterruptType(index, &interruptType);
-        if (ret != kIOReturnSuccess)
-            break;
-        if (interruptType & kIOInterruptTypePCIMessaged) {
-            source = index;
-            break;
-        }
+    UInt32 low, high, val;
+
+    val = 0;
+
+    /* Group Enable */
+    writel(ACP_SRAM_PTE_OFFSET | BIT(31), ACP_AXI2AXI_ATU_BASE_ADDR_GRP_1);
+    writel(ACP_PAGE_SIZE_4K_ENABLE, ACP_AXI2AXI_ATU_PAGE_SIZE_GRP_1);
+
+    IOByteCount offset = 0;
+    while (offset < dmaDescriptor->getLength()) {
+        IOByteCount segmentLength = 0;
+        addr64_t address = dmaDescriptor->getPhysicalSegment(offset, &segmentLength);
+
+        low = lower_32_bits(address);
+        high = upper_32_bits(address);
+
+        writel(low, ACP_SCRATCH_REG_0 + val);
+        high |= BIT(31);
+        writel(high, ACP_SCRATCH_REG_0 + val + 4);
+        offset += segmentLength;
+        val += 8;
     }
-    return source;
 }
 
-void AMDMicrophoneDevice::interruptOccurred(OSObject* owner, IOInterruptEventSource* src, int intCount)
+void AMDMicrophoneDevice::disableInterrupt()
 {
-    AMDMicrophoneDevice* me = (AMDMicrophoneDevice*)owner;
+    writel(ACP_EXT_INTR_STAT_CLEAR_MASK, ACP_EXTERNAL_INTR_STAT);
+    writel(0x0, ACP_EXTERNAL_INTR_ENB);
+}
 
-    me->writel(ACP_EXT_INTR_STAT_CLEAR_MASK, ACP_EXTERNAL_INTR_STAT);
-    me->audioEngine->takeTimeStamp();
+void AMDMicrophoneDevice::enableClock()
+{
+    UInt32 pdmClkEnable, pdmCtrl;
+
+    pdmClkEnable = ACP_PDM_CLK_FREQ_MASK;
+    writel(pdmClkEnable, ACP_WOV_CLK_CTRL);
+    pdmCtrl = readl(ACP_WOV_MISC_CTRL);
+    pdmCtrl |= ACP_WOV_MISC_CTRL_MASK;
+    writel(pdmCtrl, ACP_WOV_MISC_CTRL);
+}
+
+void AMDMicrophoneDevice::enableInterrupt()
+{
+    writel(0x1, ACP_EXTERNAL_INTR_ENB);
+    writel(ACP_PDM_DMA_INTR_MASK, ACP_EXTERNAL_INTR_CNTL);
+}
+
+UInt64 AMDMicrophoneDevice::getByteCount()
+{
+    UInt32 low, high;
+    UInt64 val;
+
+    high = readl(ACP_WOV_RX_LINEARPOSITIONCNTR_HIGH);
+    low = readl(ACP_WOV_RX_LINEARPOSITIONCNTR_LOW);
+
+    val = ((UInt64)high << 32) | (UInt64)low;
+    LOG("getByteCount val = 0x%llx\n", val);
+
+    return val;
+}
+
+void AMDMicrophoneDevice::initRingBuffer(UInt32 physAddr, UInt32 bufferSize, UInt32 watermarkSize)
+{
+    writel(physAddr, ACP_WOV_RX_RINGBUFADDR);
+    writel(bufferSize, ACP_WOV_RX_RINGBUFSIZE);
+    writel(watermarkSize, ACP_WOV_RX_INTR_WATERMARK_SIZE);
+    writel(0x1, ACP_AXI2AXI_ATU_CTRL);
 }
 
 int AMDMicrophoneDevice::powerOff()
@@ -128,6 +157,7 @@ int AMDMicrophoneDevice::reset()
 {
     UInt32 val;
     int timeout;
+    LOG("Reset device\n");
 
     writel(1, ACP_SOFT_RESET);
     timeout = 0;
@@ -146,38 +176,6 @@ int AMDMicrophoneDevice::reset()
         cpu_relax();
     }
     return kIOReturnTimeout;
-}
-
-bool AMDMicrophoneDevice::checkDMAStatus()
-{
-    bool pdmDMAStatus;
-    UInt32 pdmEnable, pdmDMAEnable;
-
-    pdmDMAStatus = false;
-    pdmEnable = readl(ACP_WOV_PDM_ENABLE);
-    pdmDMAEnable = readl(ACP_WOV_PDM_DMA_ENABLE);
-    if ((pdmEnable & ACP_PDM_ENABLE) && (pdmDMAEnable & ACP_PDM_DMA_EN_STATUS))
-        pdmDMAStatus = true;
-    return pdmDMAStatus;
-}
-
-void AMDMicrophoneDevice::enableClock()
-{
-    UInt32 pdmClkEnable, pdmCtrl;
-
-    pdmClkEnable = ACP_PDM_CLK_FREQ_MASK;
-    writel(pdmClkEnable, ACP_WOV_CLK_CTRL);
-    pdmCtrl = readl(ACP_WOV_MISC_CTRL);
-    pdmCtrl |= ACP_WOV_MISC_CTRL_MASK;
-    writel(pdmCtrl, ACP_WOV_MISC_CTRL);
-}
-
-void AMDMicrophoneDevice::initRingBuffer(UInt32 physAddr, UInt32 bufferSize, UInt32 watermarkSize)
-{
-    writel(physAddr, ACP_WOV_RX_RINGBUFADDR);
-    writel(bufferSize, ACP_WOV_RX_RINGBUFSIZE);
-    writel(watermarkSize, ACP_WOV_RX_INTR_WATERMARK_SIZE);
-    writel(0x1, ACP_AXI2AXI_ATU_CTRL);
 }
 
 int AMDMicrophoneDevice::startDMA()
@@ -236,42 +234,59 @@ int AMDMicrophoneDevice::stopDMA()
     return 0;
 }
 
-void AMDMicrophoneDevice::configDMA()
+bool AMDMicrophoneDevice::createAudioEngine()
 {
-    UInt32 low, high, val;
+    bool result = false;
 
-    val = 0;
+    LOG("createAudioEngine()\n");
 
-    /* Group Enable */
-    writel(ACP_SRAM_PTE_OFFSET | BIT(31), ACP_AXI2AXI_ATU_BASE_ADDR_GRP_1);
-    writel(ACP_PAGE_SIZE_4K_ENABLE, ACP_AXI2AXI_ATU_PAGE_SIZE_GRP_1);
-
-    IOByteCount offset = 0;
-    while (offset < dmaDescriptor->getLength()) {
-        IOByteCount segmentLength = 0;
-        addr64_t address = dmaDescriptor->getPhysicalSegment(offset, &segmentLength);
-
-        low = lower_32_bits(address);
-        high = upper_32_bits(address);
-
-        writel(low, ACP_SCRATCH_REG_0 + val);
-        high |= BIT(31);
-        writel(high, ACP_SCRATCH_REG_0 + val + 4);
-        offset += segmentLength;
-        val += 8;
+    audioEngine = new AMDMicrophoneEngine;
+    if (!audioEngine) {
+        goto Done;
     }
+
+    if (!audioEngine->init(this)) {
+        goto Done;
+    }
+
+    if (activateAudioEngine(audioEngine) != kIOReturnSuccess) {
+        LOG("ERROR activateAudioEngine failed\n");
+        goto Done;
+    }
+
+    result = true;
+
+Done:
+    if (audioEngine != NULL) {
+        audioEngine->release();
+    }
+
+    return result;
 }
 
-void AMDMicrophoneDevice::disableInterrupt()
+int AMDMicrophoneDevice::findMSIInterruptTypeIndex()
 {
-    writel(ACP_EXT_INTR_STAT_CLEAR_MASK, ACP_EXTERNAL_INTR_STAT);
-    writel(0x0, ACP_EXTERNAL_INTR_ENB);
+    IOReturn ret;
+    int index, source = 0;
+    for (index = 0;; index++) {
+        int interruptType;
+        ret = pciDevice->getInterruptType(index, &interruptType);
+        if (ret != kIOReturnSuccess)
+            break;
+        if (interruptType & kIOInterruptTypePCIMessaged) {
+            source = index;
+            break;
+        }
+    }
+    return source;
 }
 
-void AMDMicrophoneDevice::enableInterrupt()
+void AMDMicrophoneDevice::interruptOccurred(OSObject* owner, IOInterruptEventSource* src, int intCount)
 {
-    writel(0x1, ACP_EXTERNAL_INTR_ENB);
-    writel(ACP_PDM_DMA_INTR_MASK, ACP_EXTERNAL_INTR_CNTL);
+    AMDMicrophoneDevice* me = (AMDMicrophoneDevice*)owner;
+
+    me->writel(ACP_EXT_INTR_STAT_CLEAR_MASK, ACP_EXTERNAL_INTR_STAT);
+    me->audioEngine->takeTimeStamp();
 }
 
 IOService* AMDMicrophoneDevice::probe(IOService* provider, SInt32* score)
@@ -370,6 +385,7 @@ Done:
 
 void AMDMicrophoneDevice::stop(IOService* provider)
 {
+    LOG("Device stopped\n");
     irqEventSource->disable();
     if (reset() != kIOReturnSuccess) {
         LOG("reset failed\n");
