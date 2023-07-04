@@ -8,10 +8,10 @@ AMD Digital Microphone kext for modern AMD laptops with AMD's Audio Co-Processor
 ## What does this kext do?
 In modern AMD laptops, microphones are no longer connected to High Definition Audio bus.
 They are now controlled by a dedicated Audio Co-Processor, hence obviously no driver in macOS.
-This kext brings support for them. Refer #FAQ for more information.
+This kext brings support for them. Refer [FAQ](#faq) for more information.
 
 ## What's working?
-* Microphone for Renoir-based laptops, see #check-if-your-laptop-is-equipped-with-an-audio-co-processor 
+* Microphone for Renoir-based laptops, click [this](#check-if-your-laptop-is-equipped-with-an-audio-co-processor) to identify if your laptop is supported.
 
 ## What's not working?
 * Volume control
