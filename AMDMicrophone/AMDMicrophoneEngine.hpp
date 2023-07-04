@@ -16,7 +16,7 @@
 
 #define kAudioSampleRate      48000
 #define kAudioNumChannels     2
-#define kAudioSampleDepth     24
+#define kAudioSampleDepth     32
 #define kAudioSampleWidth     32
 #define kAudioSampleSize      (kAudioNumChannels * (kAudioSampleWidth / 8))
 #define kAudioNumSampleFrames (BUFFER_SIZE / kAudioSampleSize)
