@@ -23,7 +23,7 @@ This kext relies on `com.apple.iokit.IOAudioFamily`, which somehow is loaded ver
 At the moment the only way to install this kext is to place it under `/Library/Extensions/`, which requires SIP to be disabled.
 I may find a solution for this in the future.
 
-### Check if your laptop is equipped with an Audio Co-Process.
+### Check if your laptop is equipped with an Audio Co-Processor.
 T.B.D
 
 ## Installation
