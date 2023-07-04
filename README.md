@@ -24,6 +24,14 @@ At the moment the only way to install this kext is to place it under `/Library/E
 I may find a solution for this in the future.
 
 ### Check if your laptop is equipped with an Audio Co-Processor.
+#### Linux
+Use `lspci -nn`. If you have a device like this, you're good to go.
+
+```console
+03:00.5 Multimedia controller [0480]: Advanced Micro Devices, Inc. [AMD] Raven/Raven2/FireFlight/Renoir Audio Processor [1022:15e2] (rev 01)
+```
+
+#### Windows
 T.B.D
 
 ## Installation
