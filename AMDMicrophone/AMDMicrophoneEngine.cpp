@@ -152,8 +152,6 @@ void AMDMicrophoneEngine::stop(IOService* provider)
     super::stop(provider);
 }
 
-const float kOneOverMaxSInt32Value = 1.0 / 2147483648.0f;
-
 IOReturn AMDMicrophoneEngine::convertInputSamples(
     const void* sampleBuf, void* destBuf, UInt32 firstSampleFrame, UInt32 numSampleFrames,
     const IOAudioStreamFormat* streamFormat, IOAudioStream* audioStream
@@ -163,6 +161,7 @@ IOReturn AMDMicrophoneEngine::convertInputSamples(
     float* floatDestBuf;
     SInt32* inputBuf32;
     UInt32 firstSample = firstSampleFrame * streamFormat->fNumChannels;
+    const float kOneOverMaxSInt32Value = 1.0 / 2147483648.0f;
 
     floatDestBuf = (float*)destBuf;
     numSamplesLeft = numSampleFrames * streamFormat->fNumChannels;
@@ -177,11 +176,7 @@ IOReturn AMDMicrophoneEngine::convertInputSamples(
 
 UInt32 AMDMicrophoneEngine::getCurrentSampleFrame()
 {
-    UInt64 bytesCount = audioDevice->getBytesCount();
-    if (bytesCount > audioDevice->bytesCount)
-        bytesCount -= audioDevice->bytesCount;
-
-    return (UInt32)(bytesCount / BUFFER_SIZE);
+    return (audioDevice->periodsCount * PERIOD_SIZE) / kAudioSampleSize;
 }
 
 IOReturn AMDMicrophoneEngine::performAudioEngineStart()
@@ -191,7 +186,6 @@ IOReturn AMDMicrophoneEngine::performAudioEngineStart()
     audioDevice->initRingBuffer(ACP_MEM_WINDOW_START, BUFFER_SIZE, PERIOD_SIZE);
     audioDevice->writel(0x0, ACP_WOV_PDM_NO_OF_CHANNELS);
     audioDevice->writel(ACP_PDM_DECIMATION_FACTOR, ACP_WOV_PDM_DECIMATION_FACTOR);
-    audioDevice->bytesCount = audioDevice->getBytesCount();
     audioDevice->startDMA();
     audioDevice->enableInterrupt();
 

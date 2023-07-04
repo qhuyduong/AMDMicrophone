@@ -74,7 +74,7 @@ class AMDMicrophoneDevice : public IOAudioDevice {
     IOMemoryMap* baseAddrMap;
     IOVirtualAddress baseAddr;
     IOBufferMemoryDescriptor* dmaDescriptor;
-    UInt64 bytesCount;
+    UInt32 periodsCount = 0;
 
     UInt32 readl(UInt32 reg);
     void writel(UInt32 val, UInt32 reg);
@@ -83,7 +83,6 @@ class AMDMicrophoneDevice : public IOAudioDevice {
     void disableInterrupt();
     void enableClock();
     void enableInterrupt();
-    UInt64 getBytesCount();
     void initRingBuffer(UInt32 physAddr, UInt32 bufferSize, UInt32 watermarkSize);
     IOReturn powerOff();
     IOReturn powerOn();

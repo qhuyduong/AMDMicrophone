@@ -74,19 +74,6 @@ void AMDMicrophoneDevice::enableInterrupt()
     writel(ACP_PDM_DMA_INTR_MASK, ACP_EXTERNAL_INTR_CNTL);
 }
 
-UInt64 AMDMicrophoneDevice::getBytesCount()
-{
-    UInt32 low, high;
-    UInt64 val;
-
-    high = readl(ACP_WOV_RX_LINEARPOSITIONCNTR_HIGH);
-    low = readl(ACP_WOV_RX_LINEARPOSITIONCNTR_LOW);
-
-    val = ((UInt64)high << 32) | (UInt64)low;
-
-    return val;
-}
-
 void AMDMicrophoneDevice::initRingBuffer(UInt32 physAddr, UInt32 bufferSize, UInt32 watermarkSize)
 {
     writel(physAddr, ACP_WOV_RX_RINGBUFADDR);
@@ -259,7 +246,12 @@ void AMDMicrophoneDevice::interruptOccurred(OSObject* owner, IOInterruptEventSou
     AMDMicrophoneDevice* me = (AMDMicrophoneDevice*)owner;
 
     me->writel(ACP_EXT_INTR_STAT_CLEAR_MASK, ACP_EXTERNAL_INTR_STAT);
-    me->audioEngine->takeTimeStamp();
+
+    if (me->periodsCount % NUM_PERIODS == 0) {
+        me->audioEngine->takeTimeStamp(true);
+    }
+
+    me->periodsCount++;
 }
 
 IOService* AMDMicrophoneDevice::probe(IOService* provider, SInt32* score)
