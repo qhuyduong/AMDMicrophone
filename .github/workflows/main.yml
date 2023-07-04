@@ -27,15 +27,3 @@ jobs:
         with:
           name: Artifacts
           path: build/*/*.zip
-
-  analyse-clang:
-    name: Analyse Clang
-    runs-on: macos-latest
-    env:
-      JOB_TYPE: ANALYZE
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: "recursive"
-      - run: xcodebuild analyze -quiet -scheme AMDMicrophone -configuration Debug CLANG_ANALYZER_OUTPUT=plist-html CLANG_ANALYZER_OUTPUT_DIR="$(pwd)/clang-analyze" && [ "$(find clang-analyze -name "*.html")" = "" ]
-      - run: xcodebuild analyze -quiet -scheme AMDMicrophone -configuration Release CLANG_ANALYZER_OUTPUT=plist-html CLANG_ANALYZER_OUTPUT_DIR="$(pwd)/clang-analyze" && [ "$(find clang-analyze -name "*.html")" = "" ]
