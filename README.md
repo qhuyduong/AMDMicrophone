@@ -2,7 +2,7 @@
 AMD Digital Microphone kext for modern AMD laptops with AMD's Audio Co-Processor (ACP). 
 
 <p align="center">
-  <img src="./Screenshot/1.png" width="70%">
+  <img src="./Screenshots/1.png" width="70%">
 </p>
 
 ## What does this kext do?
@@ -33,7 +33,7 @@ T.B.D
 4. When notified, allow it in `Security & Privacy settings` and reboot.
 
 <p align="center">
-  <img src="./Screenshot/2.png" width="50%">
+  <img src="./Screenshots/2.png" width="50%">
 </p>
 
 
