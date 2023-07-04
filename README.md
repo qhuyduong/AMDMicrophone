@@ -2,7 +2,7 @@
 AMD Digital Microphone kext for modern AMD laptops with AMD's Audio Co-Processor (ACP). 
 
 <p align="center">
-  <img src="./screenshot.png" width="70%">
+  <img src="./Screenshot/1.png" width="70%">
 </p>
 
 ## What does this kext do?
@@ -31,6 +31,11 @@ T.B.D
 2. Download the kext from Github Actions.
 3. Copy it to `/Library/Extensions/`.
 4. When notified, allow it in `Security & Privacy settings` and reboot.
+
+<p align="center">
+  <img src="./Screenshot/2.png" width="50%">
+</p>
+
 
 ## FAQ
 #### I heard that AMD Microphone can work with VoodooHDA. How is this kext different?
