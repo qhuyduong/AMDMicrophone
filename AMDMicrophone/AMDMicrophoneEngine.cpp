@@ -25,7 +25,7 @@ bool AMDMicrophoneEngine::createControls()
     IOAudioControl* control;
 
     control = IOAudioLevelControl::createVolumeControl(
-        32768,
+        gain,
         0,
         65535,
         (-22 << 16) + (32768),

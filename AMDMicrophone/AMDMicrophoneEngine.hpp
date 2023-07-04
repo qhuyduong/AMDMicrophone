@@ -27,7 +27,7 @@ class AMDMicrophoneEngine : public IOAudioEngine {
     OSDeclareDefaultStructors(AMDMicrophoneEngine);
 
     AMDMicrophoneDevice* audioDevice;
-    SInt32 gain;
+    SInt32 gain = 32767;
 
     bool createControls();
     IOAudioStream* createNewAudioStream(
