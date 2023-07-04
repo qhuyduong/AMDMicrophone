@@ -89,7 +89,7 @@ void AMDMicrophoneDevice::enableInterrupt()
     writel(ACP_PDM_DMA_INTR_MASK, ACP_EXTERNAL_INTR_CNTL);
 }
 
-UInt64 AMDMicrophoneDevice::getByteCount()
+UInt64 AMDMicrophoneDevice::getBytesCount()
 {
     UInt32 low, high;
     UInt64 val;

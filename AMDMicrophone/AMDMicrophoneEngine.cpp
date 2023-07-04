@@ -155,8 +155,11 @@ void AMDMicrophoneEngine::stop(IOService* provider)
 UInt32 AMDMicrophoneEngine::getCurrentSampleFrame()
 {
     LOG("getCurrentSampleFrame()\n");
+    UInt64 bytesCount = audioDevice->getBytesCount();
+    if (bytesCount > audioDevice->bytesCount)
+        bytesCount -= audioDevice->bytesCount;
 
-    return 0;
+    return (UInt32)(bytesCount / BUFFER_SIZE);
 }
 
 IOReturn AMDMicrophoneEngine::performAudioEngineStart()
@@ -168,6 +171,7 @@ IOReturn AMDMicrophoneEngine::performAudioEngineStart()
     audioDevice->initRingBuffer(ACP_MEM_WINDOW_START, BUFFER_SIZE, PERIOD_SIZE);
     audioDevice->writel(0x0, ACP_WOV_PDM_NO_OF_CHANNELS);
     audioDevice->writel(ACP_PDM_DECIMATION_FACTOR, ACP_WOV_PDM_DECIMATION_FACTOR);
+    audioDevice->bytesCount = audioDevice->getBytesCount();
     audioDevice->startDMA();
     audioDevice->enableInterrupt();
 
