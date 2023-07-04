@@ -98,7 +98,6 @@ UInt64 AMDMicrophoneDevice::getBytesCount()
     low = readl(ACP_WOV_RX_LINEARPOSITIONCNTR_LOW);
 
     val = ((UInt64)high << 32) | (UInt64)low;
-    LOG("getByteCount val = 0x%llx\n", val);
 
     return val;
 }
@@ -157,7 +156,6 @@ int AMDMicrophoneDevice::reset()
 {
     UInt32 val;
     int timeout;
-    LOG("Reset device\n");
 
     writel(1, ACP_SOFT_RESET);
     timeout = 0;
@@ -238,8 +236,6 @@ bool AMDMicrophoneDevice::createAudioEngine()
 {
     bool result = false;
 
-    LOG("createAudioEngine()\n");
-
     audioEngine = new AMDMicrophoneEngine;
     if (!audioEngine) {
         goto Done;
@@ -250,7 +246,6 @@ bool AMDMicrophoneDevice::createAudioEngine()
     }
 
     if (activateAudioEngine(audioEngine) != kIOReturnSuccess) {
-        LOG("ERROR activateAudioEngine failed\n");
         goto Done;
     }
 
@@ -335,7 +330,6 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
 
     dmaDescriptor = IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, kIODirectionIn, BUFFER_SIZE);
     if (!dmaDescriptor) {
-        LOG("ERROR: failed to allocate DMA buffer");
         goto Done;
     }
 
@@ -360,13 +354,11 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
     }
 
     if (powerOn() != kIOReturnSuccess) {
-        LOG("power on failed\n");
         goto Done;
     }
 
     writel(0x1, ACP_CONTROL);
     if (reset() != kIOReturnSuccess) {
-        LOG("reset failed\n");
         goto Done;
     }
     writel(0x3, ACP_CLKMUX_SEL);
@@ -385,10 +377,8 @@ Done:
 
 void AMDMicrophoneDevice::stop(IOService* provider)
 {
-    LOG("Device stopped\n");
     irqEventSource->disable();
     if (reset() != kIOReturnSuccess) {
-        LOG("reset failed\n");
         return;
     }
     writel(0x0, ACP_CLKMUX_SEL);
