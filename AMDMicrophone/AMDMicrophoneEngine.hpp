@@ -10,6 +10,17 @@
 
 #include <IOKit/audio/IOAudioEngine.h>
 
+#define NUM_PERIODS 4
+#define PERIOD_SIZE 8192
+#define BUFFER_SIZE (PERIOD_SIZE * NUM_PERIODS)
+
+#define kAudioSampleRate      48000
+#define kAudioNumChannels     2
+#define kAudioSampleDepth     24
+#define kAudioSampleWidth     32
+#define kAudioSampleSize      (kAudioNumChannels * (kAudioSampleWidth / 8))
+#define kAudioNumSampleFrames (BUFFER_SIZE / kAudioSampleSize)
+
 class AMDMicrophoneDevice;
 
 class AMDMicrophoneEngine : public IOAudioEngine {

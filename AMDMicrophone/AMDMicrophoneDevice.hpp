@@ -56,10 +56,6 @@
 #define ACP_POWERED_OFF           0x2
 #define ACP_SRAM_PTE_OFFSET       0x2050000
 
-#define NUM_PERIODS 4
-#define PERIOD_SIZE 8192
-#define BUFFER_SIZE (PERIOD_SIZE * NUM_PERIODS)
-
 #define BIT(n)           (1UL << (n))
 #define cpu_relax()      asm volatile("rep; nop")
 #define upper_32_bits(n) ((UInt32)(((n) >> 16) >> 16))

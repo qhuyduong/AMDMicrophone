@@ -17,11 +17,6 @@
 
 #define super IOAudioEngine
 
-#define kAudioSampleRate  48000
-#define kAudioNumChannels 2
-#define kAudioSampleDepth 24
-#define kAudioSampleWidth 32
-
 OSDefineMetaClassAndStructors(AMDMicrophoneEngine, IOAudioEngine);
 
 IOAudioStream* AMDMicrophoneEngine::createNewAudioStream(
@@ -133,6 +128,7 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
     initialSampleRate.whole = kAudioSampleRate;
     initialSampleRate.fraction = 0;
     setSampleRate(&initialSampleRate);
+    setNumSampleFramesPerBuffer(kAudioNumSampleFrames);
 
     if (!createControls()) {
         goto Done;
@@ -165,8 +161,6 @@ UInt32 AMDMicrophoneEngine::getCurrentSampleFrame()
 
 IOReturn AMDMicrophoneEngine::performAudioEngineStart()
 {
-    bool pdmStatus;
-
     LOG("performAudioEngineStart()\n");
 
     takeTimeStamp(false);
@@ -182,8 +176,6 @@ IOReturn AMDMicrophoneEngine::performAudioEngineStart()
 
 IOReturn AMDMicrophoneEngine::performAudioEngineStop()
 {
-    bool pdmStatus;
-
     LOG("performAudioEngineStop()\n");
 
     audioDevice->disableInterrupt();
