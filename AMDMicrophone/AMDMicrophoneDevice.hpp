@@ -50,18 +50,14 @@
 #define ACP_MEM_WINDOW_START      0x4000000
 #define ACP_PAGE_SIZE_4K_ENABLE   0x2
 #define ACP_PDM_DECIMATION_FACTOR 0x2
-#define ACP_PDM_DISABLE           0x0
 #define ACP_PDM_DMA_EN_STATUS     0x2
 #define ACP_PDM_DMA_STAT          0x10
-#define ACP_PDM_ENABLE            0x1
 #define ACP_POWER_ON_IN_PROGRESS  0x1
 #define ACP_POWERED_OFF           0x2
 #define ACP_SRAM_PTE_OFFSET       0x2050000
 
-#define BIT(n)           (1UL << (n))
-#define cpu_relax()      asm volatile("rep; nop")
-#define upper_32_bits(n) ((UInt32)(((n) >> 16) >> 16))
-#define lower_32_bits(n) ((UInt32)((n)&0xffffffff))
+#define BIT(n)      (1UL << (n))
+#define cpu_relax() asm volatile("rep; nop")
 
 class AMDMicrophoneEngine;
 class IOInterruptEventSource;
@@ -83,18 +79,17 @@ class AMDMicrophoneDevice : public IOAudioDevice {
     UInt32 readl(UInt32 reg);
     void writel(UInt32 val, UInt32 reg);
 
-    bool checkDMAStatus();
     void configDMA();
     void disableInterrupt();
     void enableClock();
     void enableInterrupt();
     UInt64 getBytesCount();
     void initRingBuffer(UInt32 physAddr, UInt32 bufferSize, UInt32 watermarkSize);
-    int powerOff();
-    int powerOn();
-    int reset();
-    int startDMA();
-    int stopDMA();
+    IOReturn powerOff();
+    IOReturn powerOn();
+    IOReturn reset();
+    IOReturn startDMA();
+    IOReturn stopDMA();
 
     bool createAudioEngine();
     int findMSIInterruptTypeIndex();

@@ -27,26 +27,12 @@ void AMDMicrophoneDevice::writel(UInt32 val, UInt32 reg)
     *(volatile UInt32*)(baseAddr + reg - ACP_PHY_BASE_ADDRESS) = val;
 }
 
-bool AMDMicrophoneDevice::checkDMAStatus()
-{
-    bool pdmDMAStatus;
-    UInt32 pdmEnable, pdmDMAEnable;
-
-    pdmDMAStatus = false;
-    pdmEnable = readl(ACP_WOV_PDM_ENABLE);
-    pdmDMAEnable = readl(ACP_WOV_PDM_DMA_ENABLE);
-    if ((pdmEnable & ACP_PDM_ENABLE) && (pdmDMAEnable & ACP_PDM_DMA_EN_STATUS))
-        pdmDMAStatus = true;
-    return pdmDMAStatus;
-}
-
 void AMDMicrophoneDevice::configDMA()
 {
     UInt32 low, high, val;
 
     val = 0;
 
-    /* Group Enable */
     writel(ACP_SRAM_PTE_OFFSET | BIT(31), ACP_AXI2AXI_ATU_BASE_ADDR_GRP_1);
     writel(ACP_PAGE_SIZE_4K_ENABLE, ACP_AXI2AXI_ATU_PAGE_SIZE_GRP_1);
 
@@ -55,8 +41,8 @@ void AMDMicrophoneDevice::configDMA()
         IOByteCount segmentLength = 0;
         addr64_t address = dmaDescriptor->getPhysicalSegment(offset, &segmentLength);
 
-        low = lower_32_bits(address);
-        high = upper_32_bits(address);
+        low = (UInt32)address;
+        high = (UInt32)(address >> 32);
 
         writel(low, ACP_SCRATCH_REG_0 + val);
         high |= BIT(31);
@@ -74,13 +60,12 @@ void AMDMicrophoneDevice::disableInterrupt()
 
 void AMDMicrophoneDevice::enableClock()
 {
-    UInt32 pdmClkEnable, pdmCtrl;
+    UInt32 val;
 
-    pdmClkEnable = ACP_PDM_CLK_FREQ_MASK;
-    writel(pdmClkEnable, ACP_WOV_CLK_CTRL);
-    pdmCtrl = readl(ACP_WOV_MISC_CTRL);
-    pdmCtrl |= ACP_WOV_MISC_CTRL_MASK;
-    writel(pdmCtrl, ACP_WOV_MISC_CTRL);
+    writel(ACP_PDM_CLK_FREQ_MASK, ACP_WOV_CLK_CTRL);
+    val = readl(ACP_WOV_MISC_CTRL);
+    val |= ACP_WOV_MISC_CTRL_MASK;
+    writel(val, ACP_WOV_MISC_CTRL);
 }
 
 void AMDMicrophoneDevice::enableInterrupt()
@@ -110,10 +95,10 @@ void AMDMicrophoneDevice::initRingBuffer(UInt32 physAddr, UInt32 bufferSize, UIn
     writel(0x1, ACP_AXI2AXI_ATU_CTRL);
 }
 
-int AMDMicrophoneDevice::powerOff()
+IOReturn AMDMicrophoneDevice::powerOff()
 {
     UInt32 val;
-    int timeout;
+    UInt32 timeout;
 
     writel(ACP_PGFSM_CNTL_POWER_OFF_MASK, ACP_PGFSM_CONTROL);
 
@@ -121,17 +106,17 @@ int AMDMicrophoneDevice::powerOff()
     while (++timeout < 500) {
         val = readl(ACP_PGFSM_STATUS);
         if ((val & ACP_PGFSM_STATUS_MASK) == ACP_POWERED_OFF)
-            return 0;
+            return kIOReturnSuccess;
         IODelay(1);
     }
 
     return kIOReturnTimeout;
 }
 
-int AMDMicrophoneDevice::powerOn()
+IOReturn AMDMicrophoneDevice::powerOn()
 {
     UInt32 val;
-    int timeout;
+    UInt32 timeout;
 
     val = readl(ACP_PGFSM_STATUS);
     if (val == 0)
@@ -145,19 +130,19 @@ int AMDMicrophoneDevice::powerOn()
     while (++timeout < 500) {
         val = readl(ACP_PGFSM_STATUS);
         if (!val)
-            return 0;
+            return kIOReturnSuccess;
         IODelay(1);
     }
 
     return kIOReturnTimeout;
 }
 
-int AMDMicrophoneDevice::reset()
+IOReturn AMDMicrophoneDevice::reset()
 {
     UInt32 val;
-    int timeout;
+    UInt32 timeout;
 
-    writel(1, ACP_SOFT_RESET);
+    writel(0x1, ACP_SOFT_RESET);
     timeout = 0;
     while (++timeout < 500) {
         val = readl(ACP_SOFT_RESET);
@@ -165,56 +150,49 @@ int AMDMicrophoneDevice::reset()
             break;
         cpu_relax();
     }
-    writel(0, ACP_SOFT_RESET);
+    writel(0x0, ACP_SOFT_RESET);
     timeout = 0;
     while (++timeout < 500) {
         val = readl(ACP_SOFT_RESET);
         if (!val)
-            return 0;
+            return kIOReturnSuccess;
         cpu_relax();
     }
     return kIOReturnTimeout;
 }
 
-int AMDMicrophoneDevice::startDMA()
+IOReturn AMDMicrophoneDevice::startDMA()
 {
-    UInt32 pdmEnable;
-    UInt32 pdmDMAEnable;
-    int timeout;
-
-    pdmEnable = 0x1;
-    pdmDMAEnable = 0x1;
+    UInt32 val;
+    UInt32 timeout;
 
     enableClock();
-    writel(pdmEnable, ACP_WOV_PDM_ENABLE);
-    writel(pdmDMAEnable, ACP_WOV_PDM_DMA_ENABLE);
+    writel(0x1, ACP_WOV_PDM_ENABLE);
+    writel(0x1, ACP_WOV_PDM_DMA_ENABLE);
 
     timeout = 0;
     while (++timeout < ACP_COUNTER) {
-        pdmDMAEnable = readl(ACP_WOV_PDM_DMA_ENABLE);
-        if ((pdmDMAEnable & 0x2) == ACP_PDM_DMA_EN_STATUS)
-            return 0;
+        val = readl(ACP_WOV_PDM_DMA_ENABLE);
+        if ((val & 0x2) == ACP_PDM_DMA_EN_STATUS)
+            return kIOReturnSuccess;
         IODelay(5);
     }
 
     return kIOReturnTimeout;
 }
 
-int AMDMicrophoneDevice::stopDMA()
+IOReturn AMDMicrophoneDevice::stopDMA()
 {
-    UInt32 pdmEnable;
-    UInt32 pdmDMAEnable;
-    int timeout;
+    UInt32 val;
+    UInt32 timeout;
 
-    pdmEnable = readl(ACP_WOV_PDM_ENABLE);
-    pdmDMAEnable = readl(ACP_WOV_PDM_DMA_ENABLE);
-    if (pdmDMAEnable & 0x1) {
-        pdmDMAEnable = 0x2;
-        writel(pdmDMAEnable, ACP_WOV_PDM_DMA_ENABLE);
+    val = readl(ACP_WOV_PDM_DMA_ENABLE);
+    if (val & 0x1) {
+        writel(0x2, ACP_WOV_PDM_DMA_ENABLE);
         timeout = 0;
         while (++timeout < ACP_COUNTER) {
-            pdmDMAEnable = readl(ACP_WOV_PDM_DMA_ENABLE);
-            if ((pdmDMAEnable & 0x2) == 0x0)
+            val = readl(ACP_WOV_PDM_DMA_ENABLE);
+            if ((val & 0x2) == 0x0)
                 break;
             IODelay(5);
         }
@@ -222,14 +200,14 @@ int AMDMicrophoneDevice::stopDMA()
             return kIOReturnTimeout;
     }
 
-    if (pdmEnable == ACP_PDM_ENABLE) {
-        pdmEnable = ACP_PDM_DISABLE;
-        writel(pdmEnable, ACP_WOV_PDM_ENABLE);
+    val = readl(ACP_WOV_PDM_ENABLE);
+    if (val == 0x1) {
+        writel(0x0, ACP_WOV_PDM_ENABLE);
     }
 
     writel(0x1, ACP_WOV_PDM_FIFO_FLUSH);
 
-    return 0;
+    return kIOReturnSuccess;
 }
 
 bool AMDMicrophoneDevice::createAudioEngine()
@@ -342,7 +320,7 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
         this,
         (IOInterruptEventAction)&AMDMicrophoneDevice::interruptOccurred,
         provider,
-        pciDevice->findPCICapability(kIOPCIMSICapability) ? findMSIInterruptTypeIndex() : 0
+        findMSIInterruptTypeIndex()
     );
     if (workLoop->addEventSource(irqEventSource) != kIOReturnSuccess) {
         goto Done;
