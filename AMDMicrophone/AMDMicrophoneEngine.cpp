@@ -138,7 +138,7 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
         goto Done;
     }
 
-    audioStream = createNewAudioStream(kIOAudioStreamDirectionInput, audioDevice->dmaDescriptor->getBytesNoCopy(), MAX_BUFFER_SIZE);
+    audioStream = createNewAudioStream(kIOAudioStreamDirectionInput, audioDevice->dmaDescriptor->getBytesNoCopy(), BUFFER_SIZE);
     if (!audioStream) {
         goto Done;
     }
@@ -171,13 +171,10 @@ IOReturn AMDMicrophoneEngine::performAudioEngineStart()
 
     takeTimeStamp(false);
 
-    audioDevice->initPDMRingBuffer(ACP_MEM_WINDOW_START, MAX_BUFFER_SIZE, CAPTURE_MAX_PERIOD_SIZE);
+    audioDevice->initRingBuffer(ACP_MEM_WINDOW_START, BUFFER_SIZE, PERIOD_SIZE);
     audioDevice->writel(0x0, ACP_WOV_PDM_NO_OF_CHANNELS);
     audioDevice->writel(ACP_PDM_DECIMATION_FACTOR, ACP_WOV_PDM_DECIMATION_FACTOR);
-    pdmStatus = audioDevice->checkPDMDMAStatus();
-    if (!pdmStatus) {
-        audioDevice->startPDMDMA();
-    }
+    audioDevice->startDMA();
     audioDevice->enableInterrupt();
 
     return kIOReturnSuccess;
@@ -190,10 +187,7 @@ IOReturn AMDMicrophoneEngine::performAudioEngineStop()
     LOG("performAudioEngineStop()\n");
 
     audioDevice->disableInterrupt();
-    pdmStatus = audioDevice->checkPDMDMAStatus();
-    if (pdmStatus) {
-        audioDevice->stopPDMDMA();
-    }
+    audioDevice->stopDMA();
 
     return kIOReturnSuccess;
 }

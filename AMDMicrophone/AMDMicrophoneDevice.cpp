@@ -148,7 +148,7 @@ int AMDMicrophoneDevice::reset()
     return kIOReturnTimeout;
 }
 
-bool AMDMicrophoneDevice::checkPDMDMAStatus()
+bool AMDMicrophoneDevice::checkDMAStatus()
 {
     bool pdmDMAStatus;
     UInt32 pdmEnable, pdmDMAEnable;
@@ -161,7 +161,7 @@ bool AMDMicrophoneDevice::checkPDMDMAStatus()
     return pdmDMAStatus;
 }
 
-void AMDMicrophoneDevice::enablePDMClock()
+void AMDMicrophoneDevice::enableClock()
 {
     UInt32 pdmClkEnable, pdmCtrl;
 
@@ -172,7 +172,7 @@ void AMDMicrophoneDevice::enablePDMClock()
     writel(pdmCtrl, ACP_WOV_MISC_CTRL);
 }
 
-void AMDMicrophoneDevice::initPDMRingBuffer(UInt32 physAddr, UInt32 bufferSize, UInt32 watermarkSize)
+void AMDMicrophoneDevice::initRingBuffer(UInt32 physAddr, UInt32 bufferSize, UInt32 watermarkSize)
 {
     writel(physAddr, ACP_WOV_RX_RINGBUFADDR);
     writel(bufferSize, ACP_WOV_RX_RINGBUFSIZE);
@@ -180,7 +180,7 @@ void AMDMicrophoneDevice::initPDMRingBuffer(UInt32 physAddr, UInt32 bufferSize, 
     writel(0x1, ACP_AXI2AXI_ATU_CTRL);
 }
 
-int AMDMicrophoneDevice::startPDMDMA()
+int AMDMicrophoneDevice::startDMA()
 {
     UInt32 pdmEnable;
     UInt32 pdmDMAEnable;
@@ -189,7 +189,7 @@ int AMDMicrophoneDevice::startPDMDMA()
     pdmEnable = 0x1;
     pdmDMAEnable = 0x1;
 
-    enablePDMClock();
+    enableClock();
     writel(pdmEnable, ACP_WOV_PDM_ENABLE);
     writel(pdmDMAEnable, ACP_WOV_PDM_DMA_ENABLE);
 
@@ -204,7 +204,7 @@ int AMDMicrophoneDevice::startPDMDMA()
     return kIOReturnTimeout;
 }
 
-int AMDMicrophoneDevice::stopPDMDMA()
+int AMDMicrophoneDevice::stopDMA()
 {
     UInt32 pdmEnable;
     UInt32 pdmDMAEnable;
@@ -250,7 +250,6 @@ void AMDMicrophoneDevice::configDMA()
     while (offset < dmaDescriptor->getLength()) {
         IOByteCount segmentLength = 0;
         addr64_t address = dmaDescriptor->getPhysicalSegment(offset, &segmentLength);
-        LOG("Physical segment: address 0x%llx segmentLength: %llu\n", address, segmentLength);
 
         low = lower_32_bits(address);
         high = upper_32_bits(address);
@@ -319,7 +318,7 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
         goto Done;
     }
 
-    dmaDescriptor = IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, kIODirectionIn, MAX_BUFFER_SIZE);
+    dmaDescriptor = IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, kIODirectionIn, BUFFER_SIZE);
     if (!dmaDescriptor) {
         LOG("ERROR: failed to allocate DMA buffer");
         goto Done;

@@ -56,9 +56,9 @@
 #define ACP_POWERED_OFF           0x2
 #define ACP_SRAM_PTE_OFFSET       0x2050000
 
-#define CAPTURE_MAX_NUM_PERIODS 4
-#define CAPTURE_MAX_PERIOD_SIZE 8192
-#define MAX_BUFFER_SIZE         (CAPTURE_MAX_PERIOD_SIZE * CAPTURE_MAX_NUM_PERIODS)
+#define NUM_PERIODS 4
+#define PERIOD_SIZE 8192
+#define BUFFER_SIZE (PERIOD_SIZE * NUM_PERIODS)
 
 #define BIT(n)           (1UL << (n))
 #define cpu_relax()      asm volatile("rep; nop")
@@ -92,12 +92,12 @@ class AMDMicrophoneDevice : public IOAudioDevice {
     int powerOn();
     int reset();
 
-    bool checkPDMDMAStatus();
+    bool checkDMAStatus();
     void configDMA();
-    void enablePDMClock();
-    void initPDMRingBuffer(UInt32 physAddr, UInt32 bufferSize, UInt32 watermarkSize);
-    int startPDMDMA();
-    int stopPDMDMA();
+    void enableClock();
+    void initRingBuffer(UInt32 physAddr, UInt32 bufferSize, UInt32 watermarkSize);
+    int startDMA();
+    int stopDMA();
 
     void disableInterrupt();
     void enableInterrupt();
