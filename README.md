@@ -11,7 +11,7 @@ They are now controlled by a dedicated Audio Co-Processor, hence obviously no dr
 This kext brings support for them. Refer #FAQ for more information.
 
 ## What's working?
-* Microphone, of course!
+* Microphone for Renoir-based laptops, see #check-if-your-laptop-is-equipped-with-an-audio-co-processor 
 
 ## What's not working?
 * Volume control
