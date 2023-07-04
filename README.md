@@ -14,7 +14,7 @@ This kext brings support for them. Refer [FAQ](#faq) for more information.
 * Microphone for Renoir-based laptops, click [this](#check-if-your-laptop-is-equipped-with-an-audio-co-processor) to identify if your laptop is supported.
 
 ## What's not working?
-T.B.D
+* Some minor noise
 
 ## Prerequisites 
 ### Disable SIP
