@@ -32,7 +32,12 @@ Make sure you have a working Microphone Array device.
 </p>
 
 #### Linux
-T.B.D
+Query default source device is ACP
+
+```console
+$ pactl get-default-source | grep acp
+alsa_input.pci-0000_03_00.6.HiFi__hw_acp__source
+```
 
 
 ## Installation
