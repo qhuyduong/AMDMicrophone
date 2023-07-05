@@ -11,11 +11,11 @@ They are now controlled by a dedicated Audio Co-Processor, hence obviously no dr
 This kext brings support for them. Refer [FAQ](#faq) for more information.
 
 ## What's working?
-* Microphone for laptops with ACP3x processor, see [this](#check-if-your-laptop-is-equipped-with-an-audio-co-processor) to identify if your laptop is supported.
+* Microphone for Renoir-base laptops with ACP3x processor, see [this](#check-if-your-laptop-is-equipped-with-an-audio-co-processor) to identify if your laptop is supported.
 
 ## What's not working?
 * Some minor noise
-* Other versions of ACP (e.g: ACP6x)
+* Other CPU variants than Renoir, such as Raven/Raven2/Fire Flight/Van Gogh. Please open issues if you want support.
 
 ## Prerequisites 
 ### Disable SIP
