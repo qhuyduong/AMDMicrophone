@@ -57,7 +57,7 @@ sudo cp -r AMDMicrophone.kext /Library/Extensions/
 
 ## FAQ
 #### I heard that AMD Microphone can work with VoodooHDA. How is this kext different?
-Modern AMD laptops no longer use High Definition Audio (HDA). It has a dedicated Audio Co-Processor for controlling microphones.
+Some modern AMD laptops no longer use High Definition Audio (HDA). It has a dedicated Audio Co-Processor for controlling microphones.
 
 #### Can I use this kext along with AppleALC?
 Yes. This kext is a separate driver for microphones. You still need AppleALC for audio output.
