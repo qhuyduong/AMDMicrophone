@@ -2,7 +2,7 @@
 AMD Digital Microphone kext for modern AMD laptops with AMD's Audio Co-Processor (ACP).
 
 <p align="center">
-  <img src="./Screenshots/1.png" width="70%">
+  <img src="https://github.com/qhuyduong/AMDMicrophone/assets/16358771/4e2b9655-e53a-4433-a1f4-9b926bcec14b" width="70%">
 </p>
 
 ## What does this kext do?
@@ -47,7 +47,7 @@ sudo cp -r AMDMicrophone.kext /Library/Extensions/
 4. When notified, allow it in `Security & Privacy settings` and reboot.
 
 <p align="center">
-  <img src="./Screenshots/2.png" width="50%">
+  <img src="https://github.com/qhuyduong/AMDMicrophone/assets/16358771/58f053d7-7471-4cda-b9c1-fadd2de328aa" width="50%">
 </p>
 
 ## FAQ
