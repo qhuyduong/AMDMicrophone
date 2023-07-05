@@ -32,7 +32,7 @@ Make sure you have a working Microphone Array device.
 </p>
 
 #### Linux
-Query default source device is ACP
+Make sure default source device is ACP
 
 ```console
 $ pactl get-default-source | grep acp
