@@ -15,7 +15,7 @@ This kext brings support for them. Refer [FAQ](#faq) for more information.
 
 ## What's not working?
 * Some minor noise
-* Other CPU variants than Renoir, such as Raven/Raven2/Fire Flight/Van Gogh. Please open issues if you want support.
+* Other CPU variants than Renoir, such as Raven/Raven2/Fire Flight/Van Gogh/Yellow Carp. Please open issues if you want support.
 
 ## Prerequisites 
 ### Disable SIP
