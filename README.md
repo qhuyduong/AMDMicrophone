@@ -62,5 +62,5 @@ Modern AMD laptops no longer use High Definition Audio (HDA). It has a dedicated
 #### Can I use this kext along with AppleALC?
 Yes. This kext is a separate driver for microphones. You still need AppleALC for audio output.
 
-#### After installing the kext, Microphone appears in the settings but not no sound
+#### After installing the kext, Microphone appears in the settings but no sound
 Refer [this](#check-if-your-laptop-is-equipped-with-an-acp-based-microphone) to make sure your device is supported.
