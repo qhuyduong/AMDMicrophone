@@ -18,11 +18,6 @@ This kext brings support for them. Refer [FAQ](#faq) for more information.
 * Other CPU variants than Renoir, such as Raven/Raven2/Fire Flight/Van Gogh/Yellow Carp. Please open issues if you want support for these devices.
 
 ## Prerequisites 
-### Disable SIP
-This kext relies on `com.apple.iokit.IOAudioFamily`, which somehow is loaded very late in the boot process, so I cannot use this with OpenCore.
-At the moment the only way to install this kext is to place it under `/Library/Extensions/`, which requires SIP to be disabled.
-I may find a solution for this in the future.
-
 ### Check if your laptop is equipped with an ACP-based microphone
 #### Windows
 Make sure you have a working Microphone Array device.
@@ -39,6 +34,10 @@ $ pactl get-default-source | grep acp
 alsa_input.pci-0000_03_00.6.HiFi__hw_acp__source
 ```
 
+### Disable SIP
+This kext relies on `com.apple.iokit.IOAudioFamily`, which somehow is loaded very late in the boot process, so I cannot use this with OpenCore.
+At the moment the only way to install this kext is to place it under `/Library/Extensions/`, which requires SIP to be disabled.
+I may find a solution for this in the future.
 
 ## Installation
 1. Disable SIP.
