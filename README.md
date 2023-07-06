@@ -35,9 +35,9 @@ alsa_input.pci-0000_03_00.6.HiFi__hw_acp__source
 ```
 
 ### Disable SIP
-This kext relies on `com.apple.iokit.IOAudioFamily`, which somehow is loaded very late in the boot process, so I cannot use this with OpenCore.
+This kext relies on `com.apple.iokit.IOAudioFamily`, which somehow is loaded very late in the boot process, so we cannot use this with OpenCore.
 At the moment the only way to install this kext is to place it under `/Library/Extensions/`, which requires SIP to be disabled.
-I may find a solution for this in the future.
+There may be a solution for this in the future.
 
 ## Installation
 1. Disable SIP.
