@@ -34,7 +34,7 @@ $ pactl get-default-source | grep acp
 alsa_input.pci-0000_03_00.6.HiFi__hw_acp__source
 ```
 
-### Disable SIP
+### Update csr-active-config
 This kext relies on `com.apple.iokit.IOAudioFamily`, which somehow is loaded very late in the boot process, so we cannot add this kext directly to OpenCore.
 At the moment the only way to install this kext is to place it under `/Library/Extensions/`, which requires kexts to be signed. The workaround is to set `csr-active-config` in OpenCore NVRAM settings to `01000000`.
 
