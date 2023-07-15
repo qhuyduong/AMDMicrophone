@@ -172,7 +172,7 @@ IOReturn AMDMicrophoneEngine::convertInputSamples(
 
 UInt32 AMDMicrophoneEngine::getCurrentSampleFrame()
 {
-    return (audioDevice->periodsCount * PERIOD_SIZE) / FRAME_SIZE;
+    return (UInt32)audioDevice->getByteCount() / FRAME_SIZE;
 }
 
 IOReturn AMDMicrophoneEngine::performAudioEngineStart()
