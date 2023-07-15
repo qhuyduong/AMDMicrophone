@@ -159,14 +159,13 @@ IOReturn AMDMicrophoneEngine::convertInputSamples(
     float* floatDestBuf;
     SInt32* inputBuf32;
     UInt32 firstSample = firstSampleFrame * streamFormat->fNumChannels;
-    const float kOneOverMaxSInt32Value = 1.0 / 2147483648.0f;
 
     floatDestBuf = (float*)destBuf;
     numSamplesLeft = numSampleFrames * streamFormat->fNumChannels;
 
     inputBuf32 = &(((SInt32*)sampleBuf)[firstSample]);
     while (numSamplesLeft-- > 0)
-        *(floatDestBuf++) = (float)*(inputBuf32++) * kOneOverMaxSInt32Value * volume / MAX_VOLUME;
+        *(floatDestBuf++) = (float)*(inputBuf32++) * volume / MAX_VOLUME / INT32_MAX;
 
     return kIOReturnSuccess;
 }
