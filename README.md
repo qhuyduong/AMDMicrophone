@@ -48,7 +48,7 @@ At the moment the only way to install this kext is to place it under `/Library/E
 sudo cp -r AMDMicrophone.kext /Library/Extensions/
 ```
 
-4. When notified, allow it in `Security & Privacy settings` and reboot.
+4. When notified, allow it in `Security & Privacy` settings and reboot.
 
 <p align="center">
   <img src="https://github.com/qhuyduong/AMDMicrophone/assets/16358771/58f053d7-7471-4cda-b9c1-fadd2de328aa" width="50%">
