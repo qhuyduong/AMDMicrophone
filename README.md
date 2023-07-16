@@ -14,7 +14,7 @@ This kext brings support for them. Refer [FAQ](#faq) for more information.
 * Microphone for Renoir-base laptops with digital microphone (aka ACP-based mic), see [this](#check-if-your-laptop-is-equipped-with-an-acp-based-microphone) to identify if your laptop is supported.
 
 ## What's not working?
-* Some minor noise
+* Some minor noise.
 * Other CPU variants than Renoir, such as Raven/Raven2/Fire Flight/Van Gogh/Yellow Carp. Please open issues if you want support for these devices.
 
 ## Prerequisites 
@@ -36,7 +36,7 @@ alsa_input.pci-0000_03_00.6.HiFi__hw_acp__source
 
 ### Update csr-active-config
 This kext relies on `com.apple.iokit.IOAudioFamily`, which somehow is loaded very late in the boot process, so we cannot add this kext directly to OpenCore.
-At the moment the only way to install this kext is to place it under `/Library/Extensions/`, which requires kexts to be signed. The workaround is to set `csr-active-config` in OpenCore NVRAM settings to `01000000` (aka CSR_ALLOW_UNTRUSTED_KEXTS)
+At the moment the only way to install this kext is to place it under `/Library/Extensions/`, which requires kexts to be signed. The workaround is to set `csr-active-config` in OpenCore NVRAM settings to `01000000` (aka `CSR_ALLOW_UNTRUSTED_KEXTS`).
 
 
 ## Installation
