@@ -20,7 +20,7 @@
 #define SAMPLE_WIDTH 32
 #define FRAME_SIZE   (NUM_CHANNELS * SAMPLE_WIDTH / 8)
 #define NUM_FRAMES   (BUFFER_SIZE / FRAME_SIZE)
-#define MAX_VOLUME   65535
+#define MAX_VOLUME   100
 
 class AMDMicrophoneDevice;
 
