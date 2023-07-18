@@ -14,7 +14,6 @@ This kext brings support for them. Refer [FAQ](#faq) for more information.
 * Microphone for Renoir-base laptops with digital microphone (aka ACP-based mic), see [this](#check-if-your-laptop-is-equipped-with-an-acp-based-microphone) to identify if your laptop is supported.
 
 ## What's not working?
-* Some minor noise.
 * Other CPU variants than Renoir, such as Raven/Raven2/Fire Flight/Van Gogh/Yellow Carp. Please open issues if you want support for these devices.
 
 ## Prerequisites 
