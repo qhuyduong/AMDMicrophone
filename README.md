@@ -38,7 +38,7 @@ This kext relies on `com.apple.iokit.IOAudioFamily`, which somehow is loaded ver
 At the moment the only way to install this kext is to place it under `/Library/Extensions/`, which requires kexts to be signed. The workaround is to set `csr-active-config` in OpenCore NVRAM settings to `01000000` (aka `CSR_ALLOW_UNTRUSTED_KEXTS`).
 
 
-## Installation
+## Installation (follow in the right order)
 1. Set `csr-active-config` to `01000000`.
 2. Download the kext from Github Actions.
 3. Copy it to `/Library/Extensions/`.
