@@ -1,6 +1,8 @@
 # AMD Microphone
 AMD Digital Microphone kext for modern AMD laptops with AMD's Audio Co-Processor (ACP).
 
+## NOTE: For non-ACP microphones, there is an experimental fix [here](https://github.com/qhuyduong/AppleALC)
+
 <p align="center">
   <img src="https://github.com/qhuyduong/AMDMicrophone/assets/16358771/4e2b9655-e53a-4433-a1f4-9b926bcec14b" width="70%">
 </p>
