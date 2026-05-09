@@ -44,9 +44,12 @@
 #define ACP_PGFSM_CNTL_POWER_ON_MASK          0x1
 #define ACP_PGFSM_STATUS_MASK                 0x3
 #define ACP_SOFT_RESET_SOFTRESET_AUDDONE_MASK 0x10001
-#define ACP_WOV_MISC_CTRL_MASK                0x10
+#define ACP_WOV_GAIN_CONTROL                  0x18
+#define ACP_WOV_GAIN_CONTROL_SHIFT            0x3
+#define ACP_WOV_PDM_GAIN                      0x2
 
 #define ACP_COUNTER               20000
+#define ACP_DMA_PAGE_SIZE         4096
 #define ACP_MEM_WINDOW_START      0x4000000
 #define ACP_PAGE_SIZE_4K_ENABLE   0x2
 #define ACP_PDM_DECIMATION_FACTOR 0x2
@@ -74,15 +77,20 @@ class AMDMicrophoneDevice : public IOAudioDevice {
     IOMemoryMap* baseAddrMap;
     IOVirtualAddress baseAddr;
     IOBufferMemoryDescriptor* dmaDescriptor;
+    UInt64 dmaStartByteCount = 0;
+    UInt64 lastPeriodCount = 0;
+    bool dmaPrepared = false;
 
     UInt32 readl(UInt32 reg);
     void writel(UInt32 val, UInt32 reg);
 
     void configDMA();
+    void clearDMABuffer();
     void disableInterrupt();
     void enableClock();
     void enableInterrupt();
     UInt64 getByteCount();
+    UInt64 getRelativeByteCount();
     void initRingBuffer(UInt32 physAddr, UInt32 bufferSize, UInt32 watermarkSize);
     IOReturn powerOff();
     IOReturn powerOn();

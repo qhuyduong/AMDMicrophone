@@ -127,6 +127,7 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
     initialSampleRate.fraction = 0;
     setSampleRate(&initialSampleRate);
     setNumSampleFramesPerBuffer(NUM_FRAMES);
+    setInputSampleOffset(PERIOD_FRAMES);
 
     if (!createControls())
         goto Done;
@@ -155,30 +156,77 @@ IOReturn AMDMicrophoneEngine::convertInputSamples(
     const IOAudioStreamFormat* streamFormat, IOAudioStream* audioStream
 )
 {
-    UInt32 numSamplesLeft;
     float* floatDestBuf;
     SInt32* inputBuf32;
     UInt32 firstSample = firstSampleFrame * streamFormat->fNumChannels;
 
     floatDestBuf = (float*)destBuf;
-    numSamplesLeft = numSampleFrames * streamFormat->fNumChannels;
-
     inputBuf32 = &(((SInt32*)sampleBuf)[firstSample]);
-    while (numSamplesLeft-- > 0)
-        *floatDestBuf++ = (float)*inputBuf32++ * volume / MAX_VOLUME / INT32_MAX;
+
+    while (numSampleFrames-- > 0) {
+        float sample;
+        float level;
+        float targetGain;
+
+        if (streamFormat->fNumChannels == 2) {
+            float left = (float)inputBuf32[0] / INT32_MAX;
+            float right = (float)inputBuf32[1] / INT32_MAX;
+
+            sample = (left + right) * 0.5f;
+            inputBuf32 += 2;
+        } else {
+            sample = (float)*inputBuf32++ / INT32_MAX;
+        }
+
+        sample *= (float)volume / MAX_VOLUME;
+
+        level = sample >= 0.0f ? sample : -sample;
+        expanderEnvelope = expanderEnvelope * 0.990f + level * 0.010f;
+        if (expanderEnvelope >= INPUT_EXPANDER_THRESHOLD) {
+            targetGain = 1.0f;
+        } else {
+            targetGain = INPUT_EXPANDER_FLOOR
+                + (1.0f - INPUT_EXPANDER_FLOOR) * expanderEnvelope / INPUT_EXPANDER_THRESHOLD;
+        }
+
+        if (targetGain > expanderGain)
+            expanderGain += (targetGain - expanderGain) * INPUT_EXPANDER_ATTACK;
+        else
+            expanderGain += (targetGain - expanderGain) * INPUT_EXPANDER_RELEASE;
+
+        sample *= expanderGain;
+        sample *= INPUT_SOFTWARE_GAIN;
+
+        if (startupFadeFrame < STARTUP_FADE_FRAMES) {
+            sample *= (float)startupFadeFrame / STARTUP_FADE_FRAMES;
+            startupFadeFrame++;
+        }
+
+        if (sample > 1.0f)
+            sample = 1.0f;
+        else if (sample < -1.0f)
+            sample = -1.0f;
+
+        for (UInt32 channel = 0; channel < streamFormat->fNumChannels; channel++)
+            *floatDestBuf++ = sample;
+    }
 
     return kIOReturnSuccess;
 }
 
 UInt32 AMDMicrophoneEngine::getCurrentSampleFrame()
 {
-    return (UInt32)audioDevice->getByteCount() / FRAME_SIZE;
+    return (UInt32)(audioDevice->getRelativeByteCount() % BUFFER_SIZE) / FRAME_SIZE;
 }
 
 IOReturn AMDMicrophoneEngine::performAudioEngineStart()
 {
     takeTimeStamp(false);
+    startupFadeFrame = 0;
+    expanderEnvelope = 0.0f;
+    expanderGain = INPUT_EXPANDER_FLOOR;
 
+    audioDevice->clearDMABuffer();
     audioDevice->initRingBuffer(ACP_MEM_WINDOW_START, BUFFER_SIZE, PERIOD_SIZE);
     audioDevice->writel(0x0, ACP_WOV_PDM_NO_OF_CHANNELS);
     audioDevice->writel(ACP_PDM_DECIMATION_FACTOR, ACP_WOV_PDM_DECIMATION_FACTOR);

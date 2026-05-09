@@ -19,8 +19,15 @@
 #define SAMPLE_DEPTH 32
 #define SAMPLE_WIDTH 32
 #define FRAME_SIZE   (NUM_CHANNELS * SAMPLE_WIDTH / 8)
+#define PERIOD_FRAMES (PERIOD_SIZE / FRAME_SIZE)
 #define NUM_FRAMES   (BUFFER_SIZE / FRAME_SIZE)
 #define MAX_VOLUME   100
+#define INPUT_SOFTWARE_GAIN 3.0f
+#define INPUT_EXPANDER_THRESHOLD 0.018f
+#define INPUT_EXPANDER_FLOOR 0.18f
+#define INPUT_EXPANDER_ATTACK 0.05f
+#define INPUT_EXPANDER_RELEASE 0.001f
+#define STARTUP_FADE_FRAMES (SAMPLE_RATE / 2)
 
 class AMDMicrophoneDevice;
 
@@ -29,6 +36,9 @@ class AMDMicrophoneEngine : public IOAudioEngine {
 
     AMDMicrophoneDevice* audioDevice;
     UInt32 volume = MAX_VOLUME;
+    UInt32 startupFadeFrame = STARTUP_FADE_FRAMES;
+    float expanderEnvelope = 0.0f;
+    float expanderGain = 1.0f;
 
     bool createControls();
     IOAudioStream* createNewAudioStream(

@@ -41,15 +41,29 @@ void AMDMicrophoneDevice::configDMA()
         IOByteCount segmentLength = 0;
         addr64_t address = dmaDescriptor->getPhysicalSegment(offset, &segmentLength);
 
+        if (!address || !segmentLength)
+            break;
+
         low = (UInt32)address;
         high = (UInt32)(address >> 32);
 
         writel(low, ACP_SCRATCH_REG_0 + val);
         high |= BIT(31);
         writel(high, ACP_SCRATCH_REG_0 + val + 4);
-        offset += segmentLength;
+        offset += ACP_DMA_PAGE_SIZE;
         val += 8;
     }
+}
+
+void AMDMicrophoneDevice::clearDMABuffer()
+{
+    UInt8* buffer = (UInt8*)dmaDescriptor->getBytesNoCopy();
+
+    if (!buffer)
+        return;
+
+    for (UInt32 index = 0; index < BUFFER_SIZE; index++)
+        buffer[index] = 0;
 }
 
 void AMDMicrophoneDevice::disableInterrupt()
@@ -64,7 +78,8 @@ void AMDMicrophoneDevice::enableClock()
 
     writel(ACP_PDM_CLK_FREQ_MASK, ACP_WOV_CLK_CTRL);
     val = readl(ACP_WOV_MISC_CTRL);
-    val |= ACP_WOV_MISC_CTRL_MASK;
+    val &= ~ACP_WOV_GAIN_CONTROL;
+    val |= (ACP_WOV_PDM_GAIN << ACP_WOV_GAIN_CONTROL_SHIFT) & ACP_WOV_GAIN_CONTROL;
     writel(val, ACP_WOV_MISC_CTRL);
 }
 
@@ -82,6 +97,16 @@ UInt64 AMDMicrophoneDevice::getByteCount()
     low = readl(ACP_WOV_RX_LINEARPOSITIONCNTR_LOW);
 
     return ((UInt64)high << 32) | low;
+}
+
+UInt64 AMDMicrophoneDevice::getRelativeByteCount()
+{
+    UInt64 byteCount = getByteCount();
+
+    if (byteCount < dmaStartByteCount)
+        return 0;
+
+    return byteCount - dmaStartByteCount;
 }
 
 void AMDMicrophoneDevice::initRingBuffer(UInt32 physAddr, UInt32 bufferSize, UInt32 watermarkSize)
@@ -162,6 +187,7 @@ IOReturn AMDMicrophoneDevice::startDMA()
     UInt32 val;
     UInt32 timeout;
 
+    writel(0x1, ACP_WOV_PDM_FIFO_FLUSH);
     enableClock();
     writel(0x1, ACP_WOV_PDM_ENABLE);
     writel(0x1, ACP_WOV_PDM_DMA_ENABLE);
@@ -170,11 +196,16 @@ IOReturn AMDMicrophoneDevice::startDMA()
     while (++timeout < ACP_COUNTER) {
         val = readl(ACP_WOV_PDM_DMA_ENABLE);
         if ((val & 0x2) == ACP_PDM_DMA_EN_STATUS)
-            return kIOReturnSuccess;
+            break;
         IODelay(5);
     }
 
-    return kIOReturnTimeout;
+    if (timeout == ACP_COUNTER)
+        return kIOReturnTimeout;
+
+    dmaStartByteCount = getByteCount();
+    lastPeriodCount = 0;
+    return kIOReturnSuccess;
 }
 
 IOReturn AMDMicrophoneDevice::stopDMA()
@@ -254,7 +285,7 @@ void AMDMicrophoneDevice::interruptHandler()
     val = readl(ACP_EXTERNAL_INTR_STAT);
     if (val & BIT(ACP_PDM_DMA_STAT)) {
         writel(BIT(ACP_PDM_DMA_STAT), ACP_EXTERNAL_INTR_STAT);
-        byteCount = getByteCount();
+        byteCount = getRelativeByteCount();
         if (byteCount % BUFFER_SIZE == 0)
             audioEngine->takeTimeStamp();
     }
@@ -313,6 +344,10 @@ bool AMDMicrophoneDevice::initHardware(IOService* provider)
     dmaDescriptor = IOBufferMemoryDescriptor::inTaskWithOptions(kernel_task, kIODirectionIn, BUFFER_SIZE);
     if (!dmaDescriptor)
         goto Done;
+    if (dmaDescriptor->prepare(kIODirectionIn) != kIOReturnSuccess)
+        goto Done;
+    dmaPrepared = true;
+    clearDMABuffer();
 
     workLoop = getWorkLoop();
     if (!workLoop)
@@ -370,6 +405,10 @@ void AMDMicrophoneDevice::free()
     }
 
     if (dmaDescriptor) {
+        if (dmaPrepared) {
+            dmaDescriptor->complete(kIODirectionIn);
+            dmaPrepared = false;
+        }
         dmaDescriptor->release();
         dmaDescriptor = NULL;
     }
