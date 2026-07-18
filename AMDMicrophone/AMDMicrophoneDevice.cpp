@@ -215,11 +215,11 @@ IOReturn AMDMicrophoneDevice::stopDMA()
 
     val = readl(ACP_WOV_PDM_DMA_ENABLE);
     if (val & 0x1) {
-        writel(0x2, ACP_WOV_PDM_DMA_ENABLE);
+        writel(0x0, ACP_WOV_PDM_DMA_ENABLE);
         timeout = 0;
         while (++timeout < ACP_COUNTER) {
             val = readl(ACP_WOV_PDM_DMA_ENABLE);
-            if ((val & 0x2) == 0x0)
+            if (val == 0x0)
                 break;
             IODelay(5);
         }
@@ -390,8 +390,7 @@ Done:
 void AMDMicrophoneDevice::stop(IOService* provider)
 {
     irqEventSource->disable();
-    if (reset() != kIOReturnSuccess)
-        return;
+    reset();
 
     writel(0x0, ACP_CLKMUX_SEL);
     writel(0x0, ACP_CONTROL);

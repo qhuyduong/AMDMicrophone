@@ -127,7 +127,7 @@ bool AMDMicrophoneEngine::initHardware(IOService* provider)
     initialSampleRate.fraction = 0;
     setSampleRate(&initialSampleRate);
     setNumSampleFramesPerBuffer(NUM_FRAMES);
-    setInputSampleOffset(PERIOD_FRAMES);
+    setInputSampleOffset(2 * PERIOD_FRAMES);
 
     if (!createControls())
         goto Done;
@@ -230,7 +230,12 @@ IOReturn AMDMicrophoneEngine::performAudioEngineStart()
     audioDevice->initRingBuffer(ACP_MEM_WINDOW_START, BUFFER_SIZE, PERIOD_SIZE);
     audioDevice->writel(0x0, ACP_WOV_PDM_NO_OF_CHANNELS);
     audioDevice->writel(ACP_PDM_DECIMATION_FACTOR, ACP_WOV_PDM_DECIMATION_FACTOR);
-    audioDevice->startDMA();
+
+    IOReturn ret = audioDevice->startDMA();
+    if (ret != kIOReturnSuccess)
+        return ret;
+
+    IODelay(100);
     audioDevice->enableInterrupt();
 
     return kIOReturnSuccess;
